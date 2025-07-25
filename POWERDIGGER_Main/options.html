@@ -1,0 +1,180 @@
+<html>
+
+<head>
+	<style>
+	body {
+		margin: 10px;
+		width: 280px;
+		height: auto;
+	}
+
+	
+	a{
+		font-weight: bold;
+		color: #2196F3;
+	}
+	
+	button {
+		border-radius: 12px;
+		background-color: white; 
+		color: black;
+		border: 2px solid #2196F3;
+		transition-duration: 0.4s;
+	}
+	
+	button:hover {
+  		background-color: #2196F3; 
+  		color: white;
+	}
+
+	.switch {
+	  position: relative;
+	  display: inline-block;
+	  width: 30px;
+	  height: 17px;
+	}
+	
+	.switch input { 
+	  opacity: 0;
+	  width: 0;
+	  height: 0;
+	}
+	
+	.slider {
+	  position: absolute;
+	  cursor: pointer;
+	  top: 0;
+	  left: 0;
+	  right: 0;
+	  bottom: 0;
+	  background-color: #ccc;
+	  -webkit-transition: .4s;
+	  transition: .4s;
+	}
+	
+	.slider:before {
+	  position: absolute;
+	  content: "";
+	  height: 13px;
+	  width: 13px;
+	  left: 2px;
+	  bottom: 2px;
+	  background-color: white;
+	  -webkit-transition: .4s;
+	  transition: .4s;
+	}
+	
+	input:checked + .slider {
+	  background-color: #2196F3;
+	}
+	
+	input:focus + .slider {
+	  box-shadow: 0 0 1px #2196F3;
+	}
+	
+	input:checked + .slider:before {
+	  -webkit-transform: translateX(13px);
+	  -ms-transform: translateX(13px);
+	  transform: translateX(13px);
+	}
+	
+	/* Rounded sliders */
+	.slider.round {
+	  border-radius: 17px;
+	}
+	
+	.slider.round:before {
+	  border-radius: 50%;
+	}
+
+	div {
+		display: flex;
+	}
+
+	</style>
+</head>
+
+<body>
+	<div>
+		<label class="switch">
+			<input type="checkbox" id="chistory">
+			<span class="slider round">
+			</span>
+		</label>
+		<span>
+			<b>&nbsp;&nbsp;Browser History</b>
+		</span>
+	</div>
+	<p>The top banner on Bandcamp, along with all the links on the page, will turn green or red based on your Chrome browsing history. This helps you identify if you've visited these pages before.</p>
+	<br>
+	<div>
+		<label class="switch">
+			<input type="checkbox" id="ctrhistory">
+			<span class="slider round">
+			</span>
+		</label>
+		<span>
+			<b>&nbsp;&nbsp;Play History</b>
+		</span>
+	</div>
+	<p>Tracks will display in one of ten shades of red, based on your play history.<br><br><b style="color:red">Use the following buttons to manage your data. All data is lost when the extension is uninstalled.</b></p>
+	<button id="downloadBTN">Backup</button>
+	<button id="uploadBTN">Load</button>
+	<br><br><br>
+	<div>
+		<label class="switch">
+			<input type="checkbox" id="ccommons">
+			<span class="slider round">
+			</span>
+		</label>
+		<span>
+			<b>&nbsp;&nbsp;Tracks In Common</b>
+		</span>
+	</div>
+	<p>See how many tracks you have in common with other users by hover over their thumbnail in the track or album view.<br><br><b style="color:red">Bandcamp will limit your traffic, if you open to many tabs at the same time.</b></p>
+	<br>
+	<div>
+		<label class="switch">
+			<input type="checkbox" id="cjump">
+			<span class="slider round">
+			</span>
+		</label>
+		<span>
+			<b>&nbsp;&nbsp;Skip To Track Position</b>
+		</span>
+	</div>
+	<p>Skip to a specific track position: &nbsp;<input id="cjumpnumber" type="number" id="quantity" name="quantity" min="0" max="100" value="33" width="10px" /> &nbsp;%<br>(This feature is also compatible with Buy Music Club.)</p>
+	<br>
+	<div>
+		<label class="switch">
+			<input type="checkbox" id="cbmc">
+			<span class="slider round">
+			</span>
+		</label>
+		<span>
+			<b>&nbsp;&nbsp;External Buttons</b>
+		</span>
+	</div>
+	<p>Buttons appear for <a href="https://soundcloud.com" target="_blank">Soundcloud</a> and <a href="https://buymusic.club" target="_blank">Buy Music Club</a>. Furthermore, arrow keys on your keyboard allow you to navigate playlists on BMC.</p>
+	<br>
+	<div>
+		<label class="switch">
+			<input type="checkbox" id="cbpm">
+			<span class="slider round">
+			</span>
+		</label>
+		<span>
+			<b>&nbsp;&nbsp;3rd Party Optimizer</b>
+		</span>
+	</div>
+	<p>Further enhance your Bandcamp experience with these extensions: <a href="https://chrome.google.com/webstore/detail/bandcamp-enhancement-suit/padcfdpdlnpdojcihidkgjnmleeingep" target="_blank">(Link 1)</a> & <a href="https://chrome.google.com/webstore/detail/bandcamp-tempo-adjust/iniomjoihcjgakkfaebmcbnhmiobppel" target="_blank">(Link 2)</a> which include features for BPM, waveform visualization, navigation with arrow keys, and more. This option optimize the layout and enable automatic BPM loading.</p>
+	<br>
+	<p><b>Listen to my work & get in touch...</b></p>
+	<button id="scbutton" >SoundCloud</button>
+	<button id="instabutton" >Instagram</button>
+	<button id="emailbutton" >Email</button>
+
+	<script src="options.js"></script>
+</body>
+
+</html>
