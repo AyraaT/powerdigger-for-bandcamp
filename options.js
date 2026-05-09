@@ -2,6 +2,7 @@
 const oHistory = document.getElementById('chistory');
 const oTrackHistory = document.getElementById('ctrhistory');
 const oBMC = document.getElementById('cbmc');
+const oBMCKeys = document.getElementById('cbmckeys');
 const oBPM = document.getElementById('cbpm');
 const oJump = document.getElementById("cjump");
 const oJumpNR = document.getElementById("cjumpnumber");
@@ -11,6 +12,7 @@ document.addEventListener('DOMContentLoaded', restoreOptions);
 oHistory.addEventListener('change', historyPermission);
 oTrackHistory.addEventListener('change', saveOptions);
 oBMC.addEventListener('change', saveOptions);
+if (oBMCKeys) oBMCKeys.addEventListener('change', saveOptions);
 oBPM.addEventListener('change', checkExtensions);
 oJump.addEventListener('change', saveOptions);
 oJumpNR.addEventListener('change', percentageLimits);
@@ -23,12 +25,14 @@ document.getElementById("instabutton").addEventListener('click', function () {ch
 document.getElementById("emailbutton").addEventListener('click', function () {chrome.tabs.create({url: "mailto:ayras_flashdrive@icloud.com"})});
 
 function saveOptions() {
-        chrome.storage.local.set({
-                        otrhistory: oTrackHistory.checked,
-                        obmc: oBMC.checked,
-                        ojump: oJump.checked,
-                        ocommons: oCommons.checked
-                });
+        const data = {
+                otrhistory: oTrackHistory.checked,
+                obmc: oBMC.checked,
+                ojump: oJump.checked,
+                ocommons: oCommons.checked
+        };
+        if (oBMCKeys) data.obmcKeys = oBMCKeys.checked;
+        chrome.storage.local.set(data);
 }
 
 function uploadAll(){
@@ -49,6 +53,7 @@ function restoreOptions() {
                         ohistory: false,
                         otrhistory: false,
                         obmc: false,
+                        obmcKeys: null,
                         obpm: false,
                         ojump: false,
                         ojumpNr: 0,
@@ -58,6 +63,9 @@ function restoreOptions() {
                         oHistory.checked = items.ohistory;
                         oTrackHistory.checked = items.otrhistory;
                         oBMC.checked = items.obmc;
+                        // Migrate: legacy installs only have obmc; mirror it into obmcKeys.
+                        const keysVal = items.obmcKeys === null ? items.obmc : items.obmcKeys;
+                        if (oBMCKeys) oBMCKeys.checked = keysVal;
                         oJump.checked = items.ojump;
                         oJumpNR.value = items.ojumpNr;
                         oCommons.checked = items.ocommons;

@@ -21,11 +21,15 @@ chrome.runtime.onMessage.addListener(function(message, sender, senderResponse) {
                         ohistory: false,
                         otrhistory: false,
                         obmc: false,
+                        obmcKeys: null, // null => not yet set; migrate from obmc below
                         obpm: false,
                         ojump: false,
                         ojumpNr: 0,
                         ocommons: false
                 }, (options) => {
+                        // Backward-compat: when obmcKeys was never set, mirror obmc
+                        // so users upgrading from <=1.0.4 keep their arrow-key behaviour.
+                        if (options.obmcKeys === null) options.obmcKeys = options.obmc;
                         senderResponse(options);
                 });
         }

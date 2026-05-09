@@ -4,7 +4,7 @@ const audio = document.querySelector("audio");
 chrome.runtime.sendMessage({
         type: 'options'
 }, options => {
-        if (options.obmc) {
+        if (options.obmcKeys) {
                 window.addEventListener("keydown", function(event) {
                         if (event.key === "ArrowUp") {
                                 audio.currentTime = 0;
