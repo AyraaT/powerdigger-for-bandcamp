@@ -90,19 +90,17 @@ chrome.runtime.onMessage.addListener(function(message, sender, senderResponse) {
         if (message.type === "checkExtensions"){
             chrome.permissions.request({permissions: ['management']}, function (granted) {
                                         if (granted) {
-                                                var extensionBCE = 'padcfdpdlnpdojcihidkgjnmleeingep';
-                                                var extensionBCT = 'iniomjoihcjgakkfaebmcbnhmiobppel';
+                                                const extensionBCE = 'padcfdpdlnpdojcihidkgjnmleeingep';
+                                                const extensionBCT = 'iniomjoihcjgakkfaebmcbnhmiobppel';
                                                 chrome.management.getAll(function(extensions) {
-                                                        var BCEisInstalled = extensions.some(function(extensionInfo) {return extensionInfo.id === extensionBCE  && extensionInfo.enabled;});
-                                                        var BCTisInstalled = extensions.some(function(extensionInfo) {return extensionInfo.id === extensionBCT && extensionInfo.enabled;});
+                                                        const BCEisInstalled = extensions.some(function(e) {return e.id === extensionBCE && e.enabled;});
+                                                        const BCTisInstalled = extensions.some(function(e) {return e.id === extensionBCT && e.enabled;});
                                                         if (BCEisInstalled && BCTisInstalled){
                                                                 chrome.storage.local.set({obpm: true});
                                                                 senderResponse(true);
-
-                                                        }else{
+                                                        } else {
                                                                 chrome.storage.local.set({obpm: false});
-                                                                chrome.tabs.create({url: "https://chrome.google.com/webstore/detail/bandcamp-enhancement-suit/padcfdpdlnpdojcihidkgjnmleeingep", active: false});
-                                                                chrome.tabs.create({url: "https://chrome.google.com/webstore/detail/bandcamp-tempo-adjust/iniomjoihcjgakkfaebmcbnhmiobppel", active: false});
+                                                                // Don't auto-open tabs — let the options UI guide the user.
                                                                 senderResponse(false);
                                                         }
                                                 });

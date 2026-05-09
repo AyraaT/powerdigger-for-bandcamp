@@ -125,23 +125,20 @@ function checkExtensions() {
 }
 
 function onstartCheckExtensions() {
-
-                                                var extensionBCE = 'padcfdpdlnpdojcihidkgjnmleeingep';
-                                                var extensionBCT = 'iniomjoihcjgakkfaebmcbnhmiobppel';
+                                                const extensionBCE = 'padcfdpdlnpdojcihidkgjnmleeingep';
+                                                const extensionBCT = 'iniomjoihcjgakkfaebmcbnhmiobppel';
 
                                                 chrome.management.getAll(function(extensions) {
-                                                        var BCEisInstalled = extensions.some(function(extensionInfo) {return extensionInfo.id === extensionBCE  && extensionInfo.enabled;});
-                                                        var BCTisInstalled = extensions.some(function(extensionInfo) {return extensionInfo.id === extensionBCT && extensionInfo.enabled;});
+                                                        const BCEisInstalled = extensions.some(function(e) {return e.id === extensionBCE && e.enabled;});
+                                                        const BCTisInstalled = extensions.some(function(e) {return e.id === extensionBCT && e.enabled;});
                                                         if (BCEisInstalled && BCTisInstalled){
                                                                 chrome.storage.local.set({obpm: true});
                                                                 oBPM.checked = true;
-
-                                                        }else{
+                                                        } else {
                                                                 chrome.storage.local.set({obpm: false});
                                                                 oBPM.checked = false;
-                                                                chrome.tabs.create({url: "https://chrome.google.com/webstore/detail/bandcamp-enhancement-suit/padcfdpdlnpdojcihidkgjnmleeingep", active: false});
-                                                                chrome.tabs.create({url: "https://chrome.google.com/webstore/detail/bandcamp-tempo-adjust/iniomjoihcjgakkfaebmcbnhmiobppel", active: false});
-                                                                alert("To keep using the '3rd Party Optimizer', please install and activate the two extensions I mention.\n\n(Installation pages have been opened in the background)");
+                                                                // Show a single CTA in the options page instead of silently opening tabs.
+                                                                alert("To keep using the '3rd Party Optimizer', please install and enable both required extensions.\n\nLinks are in the options page below.");
                                                         }
                                                 });
 }
