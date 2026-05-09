@@ -37,11 +37,24 @@ function saveOptions() {
 
 function uploadAll(){
         let data = prompt('Please copy full backup file content here');
-        if (data != ""){
+        if (data && data !== ""){
             try{
-                chrome.storage.local.set({trackHistory:JSON.parse(data).trackHistory});
+                const parsed = JSON.parse(data);
+                // Accept both the legacy {trackHistory:{id:count}} blob and
+                // a direct flat object of tk: keys (future format).
+                if (parsed.trackHistory && typeof parsed.trackHistory === 'object') {
+                    // Legacy format — write as individual tk: keys directly so no
+                    // migration is needed and the old blob is never re-stored.
+                    const toSet = {};
+                    for (const [id, count] of Object.entries(parsed.trackHistory)) {
+                        toSet['tk:' + id] = count;
+                    }
+                    chrome.storage.local.set(toSet);
+                } else {
+                    alert('Unrecognised backup format.\n\nTo reset all play history use:\n\n{"trackHistory":{}}');
+                }
             }catch{
-                alert('Please enter valid content or use the following to reset all:\n\n{"trackHistory":{}}\n\n');
+                alert('Please enter valid JSON, or use the following to reset all:\n\n{"trackHistory":{}}');
             }
         }else{
                 alert('Please enter valid content or use the following to reset all:\n\n{"trackHistory":{}}\n\n');

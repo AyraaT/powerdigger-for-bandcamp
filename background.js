@@ -1,18 +1,54 @@
-// Atomically increment trackHistory[trackid] and return the new count.
-// Uses a tiny in-memory queue keyed by trackid so concurrent messages don't
-// race (each completes its read-modify-write before the next starts).
+// ---------- Track history storage (per-track keys) ----------
+// Storage format: chrome.storage.local key = 'tk:<trackid>' -> integer count.
+// Migration from the legacy monolithic trackHistory:{} blob runs once on first
+// access and then removes the blob to free space.
+const TRACK_KEY_PREFIX = 'tk:';
+let migrationDone = false;
+
+function trackKey(trackid) {
+        return TRACK_KEY_PREFIX + trackid;
+}
+
+// Migrate the old single-blob trackHistory into individual keys, then delete it.
+function migrateTrackHistory() {
+        if (migrationDone) return Promise.resolve();
+        return chrome.storage.local.get('trackHistory').then((items) => {
+                migrationDone = true;
+                const blob = items.trackHistory;
+                if (!blob || typeof blob !== 'object' || Array.isArray(blob)) return;
+                const toSet = {};
+                for (const [id, count] of Object.entries(blob)) {
+                        toSet[trackKey(id)] = count;
+                }
+                if (Object.keys(toSet).length === 0) {
+                        return chrome.storage.local.remove('trackHistory');
+                }
+                return chrome.storage.local.set(toSet).then(() => chrome.storage.local.remove('trackHistory'));
+        }).catch(() => { migrationDone = true; });
+}
+
+// Atomically increment a track's play count and return the new value.
+// Uses a per-trackid promise queue so concurrent messages don't race.
 const trackPlayQueues = new Map(); // trackid -> Promise chain tail
 function recordTrackPlay(trackid) {
-        const prev = trackPlayQueues.get(trackid) || Promise.resolve();
+        const key = trackKey(trackid);
+        const prev = trackPlayQueues.get(trackid) || migrateTrackHistory();
         const next = prev.then(() => new Promise((resolve) => {
-                chrome.storage.local.get({trackHistory: {}}).then((result) => {
-                        const cur = (result.trackHistory[trackid] || 0) + 1;
-                        result.trackHistory[trackid] = cur;
-                        chrome.storage.local.set({trackHistory: result.trackHistory}).then(() => resolve(cur));
+                chrome.storage.local.get({[key]: 0}).then((result) => {
+                        const cur = (result[key] || 0) + 1;
+                        chrome.storage.local.set({[key]: cur}).then(() => resolve(cur));
                 });
         }));
         trackPlayQueues.set(trackid, next.catch(() => {}));
         return next;
+}
+
+// Read a single track's play count (0 if never played).
+function getTrackCount(trackid) {
+        return migrateTrackHistory().then(() => {
+                const key = trackKey(trackid);
+                return chrome.storage.local.get({[key]: 0}).then((r) => r[key] || 0);
+        });
 }
 
 chrome.runtime.onMessage.addListener(function(message, sender, senderResponse) {
@@ -36,11 +72,16 @@ chrome.runtime.onMessage.addListener(function(message, sender, senderResponse) {
         if(message.type === "downloadFull"){
              chrome.permissions.request({permissions: ['downloads']}, function(granted) {
                                         if (granted) {
-                                                chrome.storage.local.get({trackHistory:{}}, function(items) { // null implies all items
-                                                    // Convert object to a string.
-                                                    var result = JSON.stringify(items);
-                                                    // Save as file
-                                                    var url = 'data:application/json;base64,' + btoa(result);
+                                                // Export all tk: keys as a legacy-compatible {trackHistory:{}} blob.
+                                                chrome.storage.local.get(null, function(allItems) {
+                                                    const trackHistory = {};
+                                                    for (const [k, v] of Object.entries(allItems)) {
+                                                        if (k.startsWith(TRACK_KEY_PREFIX)) {
+                                                            trackHistory[k.slice(TRACK_KEY_PREFIX.length)] = v;
+                                                        }
+                                                    }
+                                                    const result = JSON.stringify({trackHistory});
+                                                    const url = 'data:application/json;base64,' + btoa(result);
                                                     chrome.downloads.download({url: url, filename: 'POWERDIGGER_backup.json'});
                                                 });
                                         } 
@@ -81,16 +122,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, senderResponse) {
                                 });
         }
         if (message.type === "trackhistory") {
-                let trackid = message.trackid;
-                chrome.storage.local.get({
-                        trackHistory: {}
-                }).then((result) => {
-                        if (trackid in result.trackHistory) {
-                                senderResponse(result.trackHistory[trackid]);
-                        } else {
-                                senderResponse(0);
-                        }
-                });
+                getTrackCount(message.trackid).then((count) => senderResponse(count));
         }
         if (message.type === "trackplay") {
                 // No SW-side debounce — the content script is responsible for
