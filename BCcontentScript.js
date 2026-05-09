@@ -7,6 +7,7 @@ var artistBool = false;
 var trackURL = "";
 var albumURL = "";
 var artistURL = "";
+var scbuttonurl = "";
 const audio = document.querySelector("audio");
 var skipValue = 0;
 let ttimeout;

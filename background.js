@@ -114,12 +114,22 @@ chrome.runtime.onMessage.addListener(function(message, sender, senderResponse) {
                 }
         }
         if (message.type === "validate") {
+                if (!isAllowedFetch(message.url, ['buymusic.club'])) {
+                        senderResponse('Blocked URL.');
+                        return true;
+                }
                 fetch(message.url).then(function(response) {
                         return response.text();
                 }).then(function(response) {
-                        response = response.substring(response.indexOf('<script id="__NEXT_DATA__" type="application/json">') + 51);
+                        const marker = '<script id="__NEXT_DATA__" type="application/json">';
+                        const startIdx = response.indexOf(marker);
+                        if (startIdx === -1) {
+                                senderResponse(false);
+                                return;
+                        }
+                        response = response.substring(startIdx + marker.length);
                         response = response.substring(0, response.indexOf("</script>"));
-                        data = JSON.parse(response);
+                        const data = JSON.parse(response);
                         senderResponse(Object.keys(data.props.pageProps.searchResults).length !== 0);
                 }).catch(function(err) {
                         // There was an error
@@ -127,6 +137,10 @@ chrome.runtime.onMessage.addListener(function(message, sender, senderResponse) {
                 });
         }
         if (message.type === "FanPage") {
+                if (!isAllowedFetch(message.url, ['bandcamp.com'])) {
+                        senderResponse(null);
+                        return true;
+                }
                 fetch(message.url)
                     .then(response => response.text())  // Wait for the response to be fully loaded
                     .then(text => {
@@ -148,7 +162,20 @@ chrome.runtime.onMessage.addListener(function(message, sender, senderResponse) {
                     })
                     .catch(err => {
                         console.error('Fetch error:', err);
+                        senderResponse(null);
                     });
                 }
         return true;
 });
+
+// Allow only requests to known hosts (defence-in-depth against a compromised
+// content script asking the SW to fetch arbitrary URLs).
+function isAllowedFetch(url, allowedSuffixes) {
+        try {
+                const u = new URL(url);
+                if (u.protocol !== 'https:' && u.protocol !== 'http:') return false;
+                return allowedSuffixes.some(suffix => u.hostname === suffix || u.hostname.endsWith('.' + suffix));
+        } catch (_) {
+                return false;
+        }
+}
