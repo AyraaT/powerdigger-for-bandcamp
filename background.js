@@ -94,6 +94,32 @@ chrome.runtime.onMessage.addListener(function(message, sender, senderResponse) {
                         });
                 }, 50);
         }
+        if (message.type === "nobrowserhistoryBatch") {
+                // Batch variant: takes {urls: [...]} and returns {results: [bool|null...]}
+                const urls = Array.isArray(message.urls) ? message.urls : [];
+                const cutoff = Date.now() - 3000;
+                const results = new Array(urls.length).fill(null);
+                let pending = urls.length;
+                if (pending === 0) {
+                        senderResponse({results});
+                        return true;
+                }
+                urls.forEach((url, i) => {
+                        try {
+                                chrome.history.getVisits({url}, (visits) => {
+                                        if (chrome.runtime.lastError || !visits) {
+                                                results[i] = {error: true};
+                                        } else {
+                                                results[i] = visits.filter(v => v.visitTime < cutoff).length === 0;
+                                        }
+                                        if (--pending === 0) senderResponse({results});
+                                });
+                        } catch (_) {
+                                results[i] = {error: true};
+                                if (--pending === 0) senderResponse({results});
+                        }
+                });
+        }
         if (message.type === "nobrowserhistory") {
                 try {
                         chrome.history.getVisits({

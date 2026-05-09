@@ -109,12 +109,36 @@ function trackcatcher() {
         }, 50);
 }
 
-// Recolor all Links
+// Recolor all Links — batched: one message, dedup by href.
 function linkRecolor() {
-                let alllinks = document.querySelectorAll("a");
-                // more precise for profile pages is: a.item-link
-                alllinks.forEach(checkLinks);
-        
+        const alllinks = document.querySelectorAll("a[href]");
+        const byHref = new Map(); // href -> [elements]
+        alllinks.forEach(a => {
+                let href;
+                try { href = new URL(a.href).href; } catch (_) { return; }
+                if (!byHref.has(href)) byHref.set(href, []);
+                byHref.get(href).push(a);
+        });
+        const urls = Array.from(byHref.keys());
+        if (urls.length === 0) return;
+        // Chunk to keep messages reasonable (history API can be slow per-URL).
+        const CHUNK = 100;
+        for (let i = 0; i < urls.length; i += CHUNK) {
+                const slice = urls.slice(i, i + CHUNK);
+                chrome.runtime.sendMessage({
+                        type: 'nobrowserhistoryBatch',
+                        urls: slice
+                }, response => {
+                        if (!response || !response.results) return;
+                        response.results.forEach((res, j) => {
+                                const els = byHref.get(slice[j]);
+                                if (!els) return;
+                                if (res && res.error) return;
+                                const color = res === true ? "DarkOliveGreen" : "DarkRed";
+                                els.forEach(el => { el.style.color = color; });
+                        });
+                });
+        }
 }
 
 // Recolor track plays on loading
@@ -248,25 +272,6 @@ function checkPlays(item, index) {
         }
 }
 
-// Recolor the URLS based on Background Query
-function checkLinks(item, index) {
-        let urltest;
-        try {
-                urltest = new URL(item.href);
-                chrome.runtime.sendMessage({
-                        type: 'nobrowserhistory',
-                        url: urltest
-                }, response => {
-                        if (response && response.error) return; // history perm denied / failed
-                        if (response === true) {
-                                item.style.color = "DarkOliveGreen";
-                        } else {
-                                item.style.color = "DarkRed";
-                        }
-                });
-        } catch (_) {}
-}
-
 // Initiate Buy Music Club Query
 function bmcbuttons() {
         
@@ -317,17 +322,6 @@ function URLCreator (query) {
         const ar = query.split(/[^\w]/g);
         const arr = ar.filter((a) => a).map(encodeURIComponent);
         query = arr.join('+');
-        return query;
-}
-
-function oldURLCreator(query) {
-        query = query.replace(/\-.*/, '');
-        query = query.replace(/\s\s+/g, '');
-        query = query.replace('(', '');
-        query = query.replace('/', '');
-        query = query.replace(')', '');
-        query = query.replace('  ', ' ');
-        query = "https://www.buymusic.club/search/" + query;
         return query;
 }
 
