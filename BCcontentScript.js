@@ -385,18 +385,28 @@ function qResult() {
 function commonFanTracks() {
                         const fans = document.getElementsByClassName('pic');
                         for (let fan of fans) {
+                            const nameEl = fan.getElementsByClassName('name')[0];
+                            // Show a placeholder so the user knows we're working through Bandcamp's rate limit.
+                            const badge = document.createElement('b');
+                            badge.className = 'pd-common-badge';
+                            badge.style.marginLeft = '0.5em';
+                            badge.style.opacity = '0.6';
+                            badge.textContent = '(…)';
+                            if (nameEl) nameEl.appendChild(badge);
+
                             chrome.runtime.sendMessage({
                                 type: 'FanPage',
                                 url: fan.href
                             }, response => {
-                                if (!response) return;
-                                // Ensure that the response object has both properties or defaults to 0
+                                if (!response) {
+                                    badge.textContent = '(?)';
+                                    badge.title = 'Could not fetch (rate-limited or network error).';
+                                    return;
+                                }
                                 const commonTracks = response.commonTracks || '0';
                                 const totalTracks = response.totalTracks || '0';
-                                const nameEl = fan.getElementsByClassName('name')[0];
-                                if (nameEl) {
-                                    nameEl.innerHTML += '&nbsp;&nbsp;<b>(' + commonTracks + '/' + totalTracks + ')</b>';
-                                }
+                                badge.style.opacity = '1';
+                                badge.textContent = '(' + commonTracks + '/' + totalTracks + ')';
                             });
                         }
 }

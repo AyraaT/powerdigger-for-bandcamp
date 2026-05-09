@@ -173,32 +173,92 @@ chrome.runtime.onMessage.addListener(function(message, sender, senderResponse) {
                         senderResponse(null);
                         return true;
                 }
-                fetch(message.url)
-                    .then(response => response.text())  // Wait for the response to be fully loaded
-                    .then(text => {
-                        let commonItems, collectionCount = '0';
-                
-                        // Look for "items in common"
-                        const commonMatch = text.match(/(\d+)\s+(item|items)\s+in\s+common/);
-                        if (commonMatch) commonItems = commonMatch[1];
-                
-                        // Look for "total tracks"
-                        const totalMatch = text.match(/<span class="count">(\d+)<\/span>/);
-                        if (totalMatch) collectionCount = totalMatch[1];
-                
-                        // Send the response with the extracted values
-                        senderResponse({
-                            commonTracks: commonItems,
-                            totalTracks: collectionCount
-                        });
-                    })
-                    .catch(err => {
-                        console.error('Fetch error:', err);
-                        senderResponse(null);
-                    });
-                }
+                queueFanPage(message.url).then(senderResponse).catch(() => senderResponse(null));
+                return true; // keep channel open for async response
+        }
         return true;
 });
+
+// ---------- FanPage throttled fetch with 429 retry ----------
+// Bandcamp rate-limits aggressive fan-profile scraping. Run requests through a
+// small concurrency pool with exponential backoff that honours Retry-After.
+const FAN_MAX_CONCURRENCY = 2;
+const FAN_MIN_GAP_MS = 250;     // minimum gap between request starts
+const FAN_MAX_RETRIES = 5;
+const FAN_BASE_BACKOFF_MS = 1500;
+
+const fanQueue = [];            // [{url, resolve, reject}]
+let fanInflight = 0;
+let fanLastStart = 0;
+let fanCooldownUntil = 0;       // global pause when we hit a 429
+
+function queueFanPage(url) {
+        return new Promise((resolve, reject) => {
+                fanQueue.push({url, resolve, reject});
+                pumpFanQueue();
+        });
+}
+
+function pumpFanQueue() {
+        if (fanInflight >= FAN_MAX_CONCURRENCY) return;
+        if (fanQueue.length === 0) return;
+        const now = Date.now();
+        const wait = Math.max(fanCooldownUntil - now, fanLastStart + FAN_MIN_GAP_MS - now, 0);
+        if (wait > 0) {
+                setTimeout(pumpFanQueue, wait);
+                return;
+        }
+        const job = fanQueue.shift();
+        fanInflight++;
+        fanLastStart = Date.now();
+        runFanFetch(job.url, 0)
+                .then(job.resolve, job.reject)
+                .finally(() => {
+                        fanInflight--;
+                        pumpFanQueue();
+                });
+        // Try to fill up to MAX_CONCURRENCY immediately
+        pumpFanQueue();
+}
+
+function runFanFetch(url, attempt) {
+        return fetch(url).then((res) => {
+                if (res.status === 429 || res.status === 503) {
+                        if (attempt >= FAN_MAX_RETRIES) {
+                                console.warn('[POWERDIGGER] FanPage giving up on', url, 'after', attempt, 'retries');
+                                return null;
+                        }
+                        const ra = res.headers.get('Retry-After');
+                        let delay;
+                        if (ra && /^\d+$/.test(ra)) {
+                                delay = parseInt(ra, 10) * 1000;
+                        } else if (ra) {
+                                const dt = Date.parse(ra);
+                                delay = isNaN(dt) ? null : (dt - Date.now());
+                        }
+                        if (!delay || delay < 0) {
+                                // Exponential backoff with jitter.
+                                delay = FAN_BASE_BACKOFF_MS * Math.pow(2, attempt) + Math.floor(Math.random() * 500);
+                        }
+                        // Pause the whole queue so we don't hammer through the cooldown.
+                        fanCooldownUntil = Math.max(fanCooldownUntil, Date.now() + delay);
+                        console.warn('[POWERDIGGER] 429 on', url, '- retry in', delay, 'ms');
+                        return new Promise((r) => setTimeout(r, delay)).then(() => runFanFetch(url, attempt + 1));
+                }
+                if (!res.ok) return null;
+                return res.text().then((text) => {
+                        let commonItems, collectionCount = '0';
+                        const commonMatch = text.match(/(\d+)\s+(item|items)\s+in\s+common/);
+                        if (commonMatch) commonItems = commonMatch[1];
+                        const totalMatch = text.match(/<span class="count">(\d+)<\/span>/);
+                        if (totalMatch) collectionCount = totalMatch[1];
+                        return {commonTracks: commonItems, totalTracks: collectionCount};
+                });
+        }).catch((err) => {
+                console.error('[POWERDIGGER] FanPage fetch error:', err);
+                return null;
+        });
+}
 
 // Allow only requests to known hosts (defence-in-depth against a compromised
 // content script asking the SW to fetch arbitrary URLs).
