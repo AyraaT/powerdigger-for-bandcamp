@@ -1,4 +1,19 @@
-let ptimeout;
+// Atomically increment trackHistory[trackid] and return the new count.
+// Uses a tiny in-memory queue keyed by trackid so concurrent messages don't
+// race (each completes its read-modify-write before the next starts).
+const trackPlayQueues = new Map(); // trackid -> Promise chain tail
+function recordTrackPlay(trackid) {
+        const prev = trackPlayQueues.get(trackid) || Promise.resolve();
+        const next = prev.then(() => new Promise((resolve) => {
+                chrome.storage.local.get({trackHistory: {}}).then((result) => {
+                        const cur = (result.trackHistory[trackid] || 0) + 1;
+                        result.trackHistory[trackid] = cur;
+                        chrome.storage.local.set({trackHistory: result.trackHistory}).then(() => resolve(cur));
+                });
+        }));
+        trackPlayQueues.set(trackid, next.catch(() => {}));
+        return next;
+}
 
 chrome.runtime.onMessage.addListener(function(message, sender, senderResponse) {
         if (message.type === "options") {
@@ -74,25 +89,12 @@ chrome.runtime.onMessage.addListener(function(message, sender, senderResponse) {
                 });
         }
         if (message.type === "trackplay") {
-                clearTimeout(ptimeout);
-                ptimeout = setTimeout(() => {
-                    
-                         let trackid = message.trackid;
-                        chrome.storage.local.get({
-                                trackHistory: {}
-                        }).then((result) => {
-                                if (trackid in result.trackHistory) {
-                                        result.trackHistory[trackid] = result.trackHistory[trackid] + 1;
-                                } else {
-                                        result.trackHistory[trackid] = 1;
-                                }
-                                chrome.storage.local.set({
-                                        trackHistory: result.trackHistory
-                                }).then(() => {
-                                        senderResponse(result.trackHistory[trackid]);
-                                });
-                        });
-                }, 50);
+                // No SW-side debounce — the content script is responsible for
+                // collapsing duplicate fires. Persist immediately so a SW kill
+                // can't drop the increment.
+                recordTrackPlay(message.trackid).then((count) => {
+                        senderResponse(count);
+                });
         }
         if (message.type === "nobrowserhistoryBatch") {
                 // Batch variant: takes {urls: [...]} and returns {results: [bool|null...]}
