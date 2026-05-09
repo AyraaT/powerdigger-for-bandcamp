@@ -100,13 +100,17 @@ chrome.runtime.onMessage.addListener(function(message, sender, senderResponse) {
                                         'url': message.url
                                 },
                                 (result) => {
+                                        if (chrome.runtime.lastError || !result) {
+                                                senderResponse({error: true});
+                                                return;
+                                        }
                                         //Check if there is a visit older than 3 seconds ago in chrome history
                                         const found = result.filter(element => (element.visitTime < Date.now() - 3000));
                                         //Create A bool and pass it back
                                         senderResponse(found.length === 0);
                                 });
                 } catch (error) {
-                        senderResponse(error);
+                        senderResponse({error: true});
                 }
         }
         if (message.type === "validate") {

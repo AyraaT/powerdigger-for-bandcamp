@@ -82,12 +82,14 @@ function historyRecolor() {
                 type: 'nobrowserhistory',
                 url: currenturl
         }, response => {
-                if (response instanceof Error) {
-                        document.getElementById("menubar").style.backgroundColor = "yellow";
-                } else if (response) {
-                        document.getElementById("menubar").style.backgroundColor = "DarkSeaGreen";
-                } else if (!response) {
-                        document.getElementById("menubar").style.backgroundColor = "Salmon";
+                const menubar = document.getElementById("menubar");
+                if (!menubar) return;
+                if (response && response.error) {
+                        menubar.style.backgroundColor = "yellow";
+                } else if (response === true) {
+                        menubar.style.backgroundColor = "DarkSeaGreen";
+                } else {
+                        menubar.style.backgroundColor = "Salmon";
                 }
         });
 }
@@ -254,7 +256,8 @@ function checkLinks(item, index) {
                         type: 'nobrowserhistory',
                         url: urltest
                 }, response => {
-                        if (response) {
+                        if (response && response.error) return; // history perm denied / failed
+                        if (response === true) {
                                 item.style.color = "DarkOliveGreen";
                         } else {
                                 item.style.color = "DarkRed";
@@ -311,7 +314,7 @@ function bmcbuttons() {
 // format the Buy Music Club URL
 function URLCreator (query) {
         const ar = query.split(/[^\w]/g);
-        const arr = ar.filter((a) => a);
+        const arr = ar.filter((a) => a).map(encodeURIComponent);
         query = arr.join('+');
         return query;
 }
@@ -391,12 +394,14 @@ function commonFanTracks() {
                                 type: 'FanPage',
                                 url: fan.href
                             }, response => {
+                                if (!response) return;
                                 // Ensure that the response object has both properties or defaults to 0
                                 const commonTracks = response.commonTracks || '0';
                                 const totalTracks = response.totalTracks || '0';
-                                console.log(response.totalTracks);
-                        
-                                fan.getElementsByClassName('name')[0].innerHTML += '&nbsp;&nbsp;<b>(' + commonTracks + '/' + totalTracks + ')</b>';
+                                const nameEl = fan.getElementsByClassName('name')[0];
+                                if (nameEl) {
+                                    nameEl.innerHTML += '&nbsp;&nbsp;<b>(' + commonTracks + '/' + totalTracks + ')</b>';
+                                }
                             });
                         }
 }

@@ -94,7 +94,7 @@ function checkExtensions() {
                         chrome.runtime.sendMessage({type: 'checkExtensions'}, valid => {
                         if (!valid){
                                 alert("To use this option, please install and activate the two extensions I mention.\n\n(Installation pages have been opened in the background)");
-                                oJump.checked = false;
+                                oBPM.checked = false;
                         }
                 });           
                  }else{
