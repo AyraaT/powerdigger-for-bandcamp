@@ -179,24 +179,62 @@ chrome.runtime.onMessage.addListener(function(message, sender, senderResponse) {
         return true;
 });
 
-// ---------- FanPage throttled fetch with 429 retry ----------
+// ---------- FanPage throttled fetch with 429 retry + session cache ----------
 // Bandcamp rate-limits aggressive fan-profile scraping. Run requests through a
 // small concurrency pool with exponential backoff that honours Retry-After.
+// Successful results are cached in chrome.storage.session so a re-visit during
+// the same browser session doesn't refetch.
 const FAN_MAX_CONCURRENCY = 2;
 const FAN_MIN_GAP_MS = 250;     // minimum gap between request starts
 const FAN_MAX_RETRIES = 5;
 const FAN_BASE_BACKOFF_MS = 1500;
+const FAN_CACHE_PREFIX = 'fp:';
+const FAN_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h, also bounded by session lifetime
 
 const fanQueue = [];            // [{url, resolve, reject}]
 let fanInflight = 0;
 let fanLastStart = 0;
 let fanCooldownUntil = 0;       // global pause when we hit a 429
+const fanInflightByUrl = new Map(); // url -> Promise (dedupe concurrent requests)
+
+function fanCacheKey(url) {
+        return FAN_CACHE_PREFIX + url;
+}
+
+function getCachedFan(url) {
+        if (!chrome.storage.session) return Promise.resolve(null);
+        const key = fanCacheKey(url);
+        return chrome.storage.session.get(key).then((items) => {
+                const entry = items[key];
+                if (!entry) return null;
+                if (Date.now() - entry.ts > FAN_CACHE_TTL_MS) {
+                        chrome.storage.session.remove(key);
+                        return null;
+                }
+                return entry.data;
+        }).catch(() => null);
+}
+
+function setCachedFan(url, data) {
+        if (!chrome.storage.session) return;
+        chrome.storage.session.set({[fanCacheKey(url)]: {ts: Date.now(), data}}).catch(() => {});
+}
 
 function queueFanPage(url) {
-        return new Promise((resolve, reject) => {
-                fanQueue.push({url, resolve, reject});
-                pumpFanQueue();
+        // De-dupe in-flight requests for the same URL.
+        const existing = fanInflightByUrl.get(url);
+        if (existing) return existing;
+
+        const p = getCachedFan(url).then((cached) => {
+                if (cached) return cached;
+                return new Promise((resolve, reject) => {
+                        fanQueue.push({url, resolve, reject});
+                        pumpFanQueue();
+                });
         });
+        fanInflightByUrl.set(url, p);
+        p.finally(() => fanInflightByUrl.delete(url));
+        return p;
 }
 
 function pumpFanQueue() {
@@ -252,7 +290,9 @@ function runFanFetch(url, attempt) {
                         if (commonMatch) commonItems = commonMatch[1];
                         const totalMatch = text.match(/<span class="count">(\d+)<\/span>/);
                         if (totalMatch) collectionCount = totalMatch[1];
-                        return {commonTracks: commonItems, totalTracks: collectionCount};
+                        const data = {commonTracks: commonItems, totalTracks: collectionCount};
+                        setCachedFan(url, data);
+                        return data;
                 });
         }).catch((err) => {
                 console.error('[POWERDIGGER] FanPage fetch error:', err);
