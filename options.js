@@ -20,6 +20,7 @@ oCommons.addEventListener('change', saveOptions);
 
 document.getElementById("downloadBTN").addEventListener('click',download);
 document.getElementById("uploadBTN").addEventListener('click',uploadAll);
+document.getElementById("librarybutton").addEventListener('click', function () {chrome.tabs.create({url: chrome.runtime.getURL('library.html')})});
 document.getElementById("scbutton").addEventListener('click', function () {chrome.tabs.create({url: "https://soundcloud.com/ayras_flashdrive"})});
 document.getElementById("instabutton").addEventListener('click', function () {chrome.tabs.create({url: "https://www.instagram.com/ayras_flashdrive/"})});
 document.getElementById("emailbutton").addEventListener('click', function () {chrome.tabs.create({url: "mailto:ayras_flashdrive@icloud.com"})});

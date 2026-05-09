@@ -206,8 +206,139 @@ chrome.runtime.onMessage.addListener(function(message, sender, senderResponse) {
                 queueFanPage(message.url).then(senderResponse).catch(() => senderResponse(null));
                 return true; // keep channel open for async response
         }
+
+        // ---------- Library messages ----------
+        if (message.type === "libraryGet") {
+                getLibrary().then(senderResponse);
+        }
+        if (message.type === "libraryCreateFolder") {
+                createFolder(message.name, message.color).then(senderResponse);
+        }
+        if (message.type === "libraryRenameFolder") {
+                renameFolder(message.folderId, message.name).then(senderResponse);
+        }
+        if (message.type === "libraryDeleteFolder") {
+                deleteFolder(message.folderId).then(senderResponse);
+        }
+        if (message.type === "librarySetFolderColor") {
+                setFolderColor(message.folderId, message.color).then(senderResponse);
+        }
+        if (message.type === "libraryAddTrack") {
+                addTrackToFolder(message.folderId, message.track).then(senderResponse);
+        }
+        if (message.type === "libraryRemoveTrack") {
+                removeTrackFromFolder(message.folderId, message.trackId).then(senderResponse);
+        }
+        if (message.type === "libraryMoveTrack") {
+                moveTrack(message.fromFolder, message.toFolder, message.trackId).then(senderResponse);
+        }
+        if (message.type === "libraryReorderFolders") {
+                reorderFolders(message.order).then(senderResponse);
+        }
+        if (message.type === "libraryGetFoldersForTrack") {
+                getFoldersForTrack(message.trackId).then(senderResponse);
+        }
+        if (message.type === "openLibrary") {
+                chrome.tabs.create({url: chrome.runtime.getURL('library.html')});
+        }
         return true;
 });
+
+// ---------- Library storage helpers ----------
+// Schema: chrome.storage.local['pdLibrary'] = {
+//   folderOrder: [folderId, ...],
+//   folders: { [folderId]: { name, color, tracks: [{id,title,artist,album,url,addedAt}] } }
+// }
+
+function getLibrary() {
+        return chrome.storage.local.get({pdLibrary: {folderOrder: [], folders: {}}})
+                .then(r => r.pdLibrary);
+}
+
+function saveLibrary(lib) {
+        return chrome.storage.local.set({pdLibrary: lib}).then(() => lib);
+}
+
+function uid() {
+        return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function createFolder(name, color) {
+        return getLibrary().then(lib => {
+                const id = uid();
+                lib.folders[id] = {name: name || 'New Folder', color: color || '#4a90d9', tracks: []};
+                lib.folderOrder.push(id);
+                return saveLibrary(lib).then(() => ({id, folder: lib.folders[id]}));
+        });
+}
+
+function renameFolder(folderId, name) {
+        return getLibrary().then(lib => {
+                if (!lib.folders[folderId]) return null;
+                lib.folders[folderId].name = name;
+                return saveLibrary(lib).then(() => true);
+        });
+}
+
+function deleteFolder(folderId) {
+        return getLibrary().then(lib => {
+                delete lib.folders[folderId];
+                lib.folderOrder = lib.folderOrder.filter(id => id !== folderId);
+                return saveLibrary(lib).then(() => true);
+        });
+}
+
+function setFolderColor(folderId, color) {
+        return getLibrary().then(lib => {
+                if (!lib.folders[folderId]) return null;
+                lib.folders[folderId].color = color;
+                return saveLibrary(lib).then(() => true);
+        });
+}
+
+function addTrackToFolder(folderId, track) {
+        return getLibrary().then(lib => {
+                if (!lib.folders[folderId]) return null;
+                const existing = lib.folders[folderId].tracks.findIndex(t => t.id === track.id);
+                if (existing !== -1) return {alreadyExists: true};
+                lib.folders[folderId].tracks.unshift({...track, addedAt: Date.now()});
+                return saveLibrary(lib).then(() => ({added: true}));
+        });
+}
+
+function removeTrackFromFolder(folderId, trackId) {
+        return getLibrary().then(lib => {
+                if (!lib.folders[folderId]) return null;
+                lib.folders[folderId].tracks = lib.folders[folderId].tracks.filter(t => t.id !== trackId);
+                return saveLibrary(lib).then(() => true);
+        });
+}
+
+function moveTrack(fromFolder, toFolder, trackId) {
+        return getLibrary().then(lib => {
+                const src = lib.folders[fromFolder];
+                const dst = lib.folders[toFolder];
+                if (!src || !dst) return null;
+                const idx = src.tracks.findIndex(t => t.id === trackId);
+                if (idx === -1) return null;
+                const [track] = src.tracks.splice(idx, 1);
+                if (!dst.tracks.find(t => t.id === trackId)) dst.tracks.unshift(track);
+                return saveLibrary(lib).then(() => true);
+        });
+}
+
+function reorderFolders(order) {
+        return getLibrary().then(lib => {
+                lib.folderOrder = order.filter(id => lib.folders[id]);
+                return saveLibrary(lib).then(() => true);
+        });
+}
+
+function getFoldersForTrack(trackId) {
+        return getLibrary().then(lib => {
+                return lib.folderOrder.filter(id => lib.folders[id].tracks.some(t => t.id === trackId));
+        });
+}
 
 // ---------- FanPage throttled fetch with 429 retry + session cache ----------
 // Bandcamp rate-limits aggressive fan-profile scraping. Run requests through a

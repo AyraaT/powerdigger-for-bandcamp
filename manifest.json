@@ -38,6 +38,10 @@
                 "default_title": "POWERDIGGER for Bandcamp",
                 "default_popup": "options.html"
         },
+        "web_accessible_resources": [{
+                "resources": ["library.html"],
+                "matches": ["<all_urls>"]
+        }],
         "description": "Supercharge your Bandcamp discovery: browser & play history highlights, tracks-in-common badges, Buy Music Club integration, track-skip, and more.",
         "author": "Ayra"
 }
