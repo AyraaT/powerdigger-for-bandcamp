@@ -57,7 +57,7 @@ PD.injectBmcButtons = function () {
 
         // ── Validate and count down ──────────────────────────────────────────
         function qBMC(url, label) {
-                chrome.runtime.sendMessage({ type: 'bmcValidate', url }, (valid) => {
+                PD.api.send(PD.MSG.BMC_VALIDATE, { url }, (valid) => {
                         if (valid && label === 'track')  trackBool  = true;
                         if (valid && label === 'album')  albumBool  = true;
                         if (valid && label === 'artist') artistBool = true;

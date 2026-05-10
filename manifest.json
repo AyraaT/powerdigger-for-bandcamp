@@ -15,6 +15,7 @@
                 "matches": ["*://*.bandcamp.com/*"],
                 "js": [
                         "content/shared.js",
+                        "content/api.js",
                         "content/jumpTime.js",
                         "content/bpm.js",
                         "content/historyLinks.js",

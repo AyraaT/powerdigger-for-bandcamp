@@ -1,3 +1,14 @@
+const MSG = {
+        OPTIONS: 'options',
+        BACKUP_DOWNLOAD: 'backupDownload',
+        PERM_CHECK_HISTORY: 'permCheckHistory',
+        PERM_CHECK_EXTENSIONS: 'permCheckExtensions',
+};
+
+function send(type, payload = {}, cb) {
+        chrome.runtime.sendMessage({ type, ...payload }, cb);
+}
+
 // Saves options to chrome.storage
 const oHistory = document.getElementById('chistory');
 const oTrackHistory = document.getElementById('ctrhistory');
@@ -90,7 +101,7 @@ function restoreOptions() {
 
 function historyPermission() {
             if (oHistory.checked){
-                            chrome.runtime.sendMessage({type: 'permCheckHistory'});         
+                            send(MSG.PERM_CHECK_HISTORY);         
             }else{
                             chrome.storage.local.set({prefHistory: false});
             }                       
@@ -98,7 +109,7 @@ function historyPermission() {
  
 
 function download() {
-                chrome.runtime.sendMessage({type: 'backupDownload'});                   
+                send(MSG.BACKUP_DOWNLOAD);                   
 }
 
 function percentageLimits() {
@@ -112,7 +123,7 @@ function percentageLimits() {
 
 function permCheckExtensions() {
             if (oBPM.checked){
-                        chrome.runtime.sendMessage({type: 'permCheckExtensions'}, valid => {
+                        send(MSG.PERM_CHECK_EXTENSIONS, {}, valid => {
                         if (!valid){
                                 alert("To use this option, please install and activate the two extensions I mention.\n\n(Installation pages have been opened in the background)");
                                 oBPM.checked = false;

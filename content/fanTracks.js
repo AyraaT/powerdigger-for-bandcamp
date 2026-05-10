@@ -13,7 +13,7 @@ PD.injectFanBadges = function () {
                 badge.textContent  = '(…)';
                 if (nameEl) nameEl.appendChild(badge);
 
-                chrome.runtime.sendMessage({ type: 'fanPage', url: fan.href }, (response) => {
+                PD.api.send(PD.MSG.FAN_PAGE, { url: fan.href }, (response) => {
                         if (!response) {
                                 badge.textContent = '(?)';
                                 badge.title = 'Could not fetch (rate-limited or network error).';

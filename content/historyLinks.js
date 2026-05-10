@@ -2,7 +2,7 @@
 
 // ── Top-banner recolor ────────────────────────────────────────────────────
 PD.recolorBanner = function () {
-        chrome.runtime.sendMessage({ type: 'historyCheck', url: PD.currentUrl }, (response) => {
+        PD.api.send(PD.MSG.HISTORY_CHECK, { url: PD.currentUrl }, (response) => {
                 const menubar = document.getElementById('menubar');
                 if (!menubar) return;
                 if (response && response.error) {
@@ -34,7 +34,7 @@ PD.recolorLinks = function () {
         const CHUNK = 100;
         for (let i = 0; i < urls.length; i += CHUNK) {
                 const slice = urls.slice(i, i + CHUNK);
-                chrome.runtime.sendMessage({ type: 'historyCheckBatch', urls: slice }, (response) => {
+                PD.api.send(PD.MSG.HISTORY_CHECK_BATCH, { urls: slice }, (response) => {
                         if (!response || !response.results) return;
                         response.results.forEach((res, j) => {
                                 const els = byHref.get(slice[j]);

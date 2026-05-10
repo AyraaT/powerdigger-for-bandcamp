@@ -1,6 +1,7 @@
 // Fan-page fetching: throttled concurrency + exponential backoff on 429
 // + chrome.storage.session cache (6h TTL, cleared on browser close).
 import { isAllowedFetch } from './utils.js';
+import { session } from './storage.js';
 
 const FAN_MAX_CONCURRENCY = 2;
 const FAN_MIN_GAP_MS = 250;      // minimum gap between request starts
@@ -20,13 +21,13 @@ const fanInflightByUrl = new Map(); // url -> Promise (dedup concurrent requests
 function fanCacheKey(url) { return FAN_CACHE_PREFIX + url; }
 
 function getCachedFan(url) {
-        if (!chrome.storage.session) return Promise.resolve(null);
+        if (!session.hasApi()) return Promise.resolve(null);
         const key = fanCacheKey(url);
-        return chrome.storage.session.get(key).then((items) => {
+        return session.get(key).then((items) => {
                 const entry = items[key];
                 if (!entry) return null;
                 if (Date.now() - entry.ts > FAN_CACHE_TTL_MS) {
-                        chrome.storage.session.remove(key);
+                        session.remove(key);
                         return null;
                 }
                 return entry.data;
@@ -34,10 +35,8 @@ function getCachedFan(url) {
 }
 
 function setCachedFan(url, data) {
-        if (!chrome.storage.session) return;
-        chrome.storage.session
-                .set({ [fanCacheKey(url)]: { ts: Date.now(), data } })
-                .catch(() => {});
+        if (!session.hasApi()) return;
+        session.set({ [fanCacheKey(url)]: { ts: Date.now(), data } }).catch(() => {});
 }
 
 // ── Queue / pump ───────────────────────────────────────────────────────────
@@ -81,7 +80,7 @@ function runFanFetch(url, attempt) {
         return fetch(url).then((res) => {
                 if (res.status === 429 || res.status === 503) {
                         if (attempt >= FAN_MAX_RETRIES) {
-                                console.warn('[POWERDIGGER] FanPage giving up on', url, 'after', attempt, 'retries');
+                                console.warn('[POWERDIGGER] fanPage giving up on', url, 'after', attempt, 'retries');
                                 return null;
                         }
                         const ra = res.headers.get('Retry-After');
@@ -112,7 +111,7 @@ function runFanFetch(url, attempt) {
                         return data;
                 });
         }).catch((err) => {
-                console.error('[POWERDIGGER] FanPage fetch error:', err);
+                console.error('[POWERDIGGER] fanPage fetch error:', err);
                 return null;
         });
 }

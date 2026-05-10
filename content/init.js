@@ -1,7 +1,7 @@
 // Entry point: fetch user options then bootstrap each feature.
 // All feature functions (bmcButtons, historyLinks, etc.) are defined in their
 // own files and attached to the shared PD namespace.
-chrome.runtime.sendMessage({ type: 'options' }, (options) => {
+PD.api.getOptions((options) => {
         const url = PD.currentUrl;
         const isTrackOrAlbum = url.includes('/track/') || url.includes('/album/');
 

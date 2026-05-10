@@ -1,3 +1,5 @@
+import { local } from './storage.js';
+
 // Track history storage — per-track keys (tk:<id> -> integer count).
 // Migration from the legacy monolithic trackHistory:{} blob runs once on first
 // access and then removes the blob to free space.
@@ -11,7 +13,7 @@ function trackKey(trackid) {
 // Migrate the old single-blob trackHistory into individual keys, then delete it.
 export function migrateTrackHistory() {
         if (migrationDone) return Promise.resolve();
-        return chrome.storage.local.get('trackHistory').then((items) => {
+        return local.get('trackHistory').then((items) => {
                 migrationDone = true;
                 const blob = items.trackHistory;
                 if (!blob || typeof blob !== 'object' || Array.isArray(blob)) return;
@@ -20,10 +22,9 @@ export function migrateTrackHistory() {
                         toSet[trackKey(id)] = count;
                 }
                 if (Object.keys(toSet).length === 0) {
-                        return chrome.storage.local.remove('trackHistory');
+                        return local.remove('trackHistory');
                 }
-                return chrome.storage.local.set(toSet)
-                        .then(() => chrome.storage.local.remove('trackHistory'));
+                return local.set(toSet).then(() => local.remove('trackHistory'));
         }).catch(() => { migrationDone = true; });
 }
 
@@ -35,9 +36,9 @@ export function recordTrackPlay(trackid) {
         const key = trackKey(trackid);
         const prev = trackPlayQueues.get(trackid) || migrateTrackHistory();
         const next = prev.then(() => new Promise((resolve) => {
-                chrome.storage.local.get({ [key]: 0 }).then((result) => {
+                local.get({ [key]: 0 }).then((result) => {
                         const cur = (result[key] || 0) + 1;
-                        chrome.storage.local.set({ [key]: cur }).then(() => resolve(cur));
+                        local.set({ [key]: cur }).then(() => resolve(cur));
                 });
         }));
         trackPlayQueues.set(trackid, next.catch(() => {}));
@@ -48,6 +49,6 @@ export function recordTrackPlay(trackid) {
 export function getTrackCount(trackid) {
         return migrateTrackHistory().then(() => {
                 const key = trackKey(trackid);
-                return chrome.storage.local.get({ [key]: 0 }).then((r) => r[key] || 0);
+                return local.get({ [key]: 0 }).then((r) => r[key] || 0);
         });
 }
