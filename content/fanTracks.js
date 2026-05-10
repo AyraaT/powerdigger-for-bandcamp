@@ -16,6 +16,7 @@ PD.injectFanBadges = function () {
       if (!response) {
         badge.textContent = '(?)';
         badge.title = 'Could not fetch (rate-limited or network error).';
+        PD.log.warn('fan badge fetch failed', fan.href);
         return;
       }
       badge.style.opacity = '1';

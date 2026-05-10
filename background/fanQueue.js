@@ -3,6 +3,7 @@ import { isAllowedFetch } from './utils.js';
 import { session } from './storage.js';
 
 const { STORAGE } = globalThis.PD_CONTRACTS;
+const logger = globalThis.PDLogger?.mk('fanQueue') ?? console;
 
 const FAN_MAX_CONCURRENCY = 2;
 const FAN_MIN_GAP_MS = 250;
@@ -110,9 +111,13 @@ function runFanFetch(url, attempt) {
   return fetch(url)
     .then((res) => {
       if (res.status === 429 || res.status === 503) {
-        if (attempt >= FAN_MAX_RETRIES) return null;
+        if (attempt >= FAN_MAX_RETRIES) {
+          logger.warn('max retries reached', { url, attempt });
+          return null;
+        }
 
         const delay = computeRetryDelay(res.headers.get('Retry-After'), attempt);
+        logger.warn('rate limited; backing off', { url, attempt, delay, status: res.status });
         fanCooldownUntil = Math.max(fanCooldownUntil, Date.now() + delay);
         return new Promise((resolve) => setTimeout(resolve, delay)).then(() =>
           runFanFetch(url, attempt + 1),

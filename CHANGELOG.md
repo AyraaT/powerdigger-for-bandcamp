@@ -1,6 +1,15 @@
 # Changelog
 
-## Unreleased
+## 1.0.6
+
+- Added GitHub Actions CI workflow (`lint`, `test`, `format:check`) for pushes/PRs.
+- Added lightweight debug logger utility (`shared/logger.js`) with opt-in flag:
+  - set `window.PD_DEBUG = true`, or
+  - set `localStorage['pd:debug'] = '1'`.
+- Added optional-permissions UX note in options popup explaining why/when each permission is requested.
+- Added `QA.md` manual regression checklist for key extension flows.
+
+## 1.0.5
 
 - Unified message/storage contracts in `shared/contracts.js`.
 - Converted messaging to Promise/`async` API flows in background/content/options/BMC scripts.

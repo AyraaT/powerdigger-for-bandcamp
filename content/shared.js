@@ -3,6 +3,7 @@
 // Using `var` on window so any module can read and write them.
 
 window.PD = window.PD || {};
+PD.log = globalThis.PDLogger?.mk('content') ?? console;
 
 PD.currentUrl = window.location.href;
 PD.nameSection = document.getElementById('name-section');

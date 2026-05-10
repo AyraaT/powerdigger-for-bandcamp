@@ -20,6 +20,7 @@ export default [
         console: 'readonly',
         prompt: 'readonly',
         alert: 'readonly',
+        localStorage: 'readonly',
         clearTimeout: 'readonly',
         globalThis: 'readonly',
         PD: 'writable',

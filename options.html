@@ -92,6 +92,13 @@
   </head>
 
   <body>
+    <p>
+      <b>Permission note:</b> Browser History, Downloads, and Management are optional Chrome
+      permissions. POWERDIGGER only requests them when you enable features that need them: Browser
+      History colors (<code>history</code>), Backup download (<code>downloads</code>), and 3rd Party
+      Optimizer checks (<code>management</code>).
+    </p>
+    <br />
     <div>
       <label class="switch">
         <input type="checkbox" id="chistory" />
@@ -222,6 +229,7 @@
     <button id="emailbutton">Email</button>
 
     <script src="shared/contracts.js"></script>
+    <script src="shared/logger.js"></script>
     <script src="optionsSchema.js"></script>
     <script src="options.js"></script>
   </body>

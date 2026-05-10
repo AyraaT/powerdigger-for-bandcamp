@@ -6,6 +6,7 @@ import { isAllowedFetch } from './utils.js';
 import { OPTION_DEFAULTS, normalizeOptions } from './optionsSchema.js';
 
 const { MSG } = globalThis.PD_CONTRACTS;
+const logger = globalThis.PDLogger?.mk('background') ?? console;
 
 function requestPermission(permission) {
   return chrome.permissions.request({ permissions: [permission] });
@@ -124,6 +125,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   Promise.resolve(handler(message, sender))
     .then((result) => sendResponse(result))
-    .catch(() => sendResponse(null));
+    .catch((err) => {
+      logger.error('handler failed', message?.type, err);
+      sendResponse(null);
+    });
   return true;
 });

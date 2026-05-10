@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "POWERDIGGER for Bandcamp",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "permissions": ["storage", "unlimitedStorage"],
   "optional_permissions": ["history", "downloads", "management"],
   "content_scripts": [
@@ -9,6 +9,7 @@
       "matches": ["*://*.bandcamp.com/*"],
       "js": [
         "shared/contracts.js",
+        "shared/logger.js",
         "content/shared.js",
         "content/optionsSchema.js",
         "content/api.js",
@@ -26,7 +27,7 @@
     },
     {
       "matches": ["*://*.buymusic.club/*"],
-      "js": ["shared/contracts.js", "optionsSchema.js", "bmc.js"],
+      "js": ["shared/contracts.js", "shared/logger.js", "optionsSchema.js", "bmc.js"],
       "run_at": "document_end"
     }
   ],
