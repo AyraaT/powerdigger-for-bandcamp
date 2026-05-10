@@ -28,13 +28,6 @@ chrome.runtime.sendMessage({
         if (options.obmc && (currenturl.includes("/track/") || currenturl.includes("/album/"))) {
                 bmcbuttons();
         }
-        if (options.ocommons && (currenturl.includes("/track/") || currenturl.includes("/album/"))) {
-            commonFanTracks();   
-        }
-        // Library save button — shown on all track/album pages regardless of other options
-        if (currenturl.includes("/track/") || currenturl.includes("/album/")) {
-                injectLibraryButton();
-        }
         if (options.ohistory) {
                 historyRecolor();
                 historycatcher();
@@ -57,6 +50,7 @@ chrome.runtime.sendMessage({
                 skipValue = options.ojumpNr
                 audio.addEventListener('loadeddata', jumpTime);
         }
+        // in common option
         if (options.ocommons && (currenturl.includes("/track/") || currenturl.includes("/album/"))) {
             commonFanTracks();   
         }
@@ -417,147 +411,3 @@ function commonFanTracks() {
                         }
 }
 
-// ---------- Library: save button + folder picker ----------
-function injectLibraryButton() {
-        if (!insertionPoint) return;
-
-        // Gather track metadata from the ld+json we already parsed.
-        let trackMeta = null;
-        try {
-                if (data['@type'] === 'MusicRecording') {
-                        trackMeta = {
-                                id: data.additionalProperty[0].value.toString(),
-                                title: data.name,
-                                artist: data.byArtist.name,
-                                album: data.inAlbum ? data.inAlbum.name : '',
-                                url: currenturl
-                        };
-                } else if (data['@type'] === 'MusicAlbum') {
-                        trackMeta = {
-                                id: 'album_' + data.name.replace(/\W/g, '') + '_' + data.byArtist.name.replace(/\W/g, ''),
-                                title: data.name,
-                                artist: data.byArtist.name,
-                                album: data.name,
-                                url: currenturl
-                        };
-                }
-        } catch (_) { return; }
-        if (!trackMeta) return;
-
-        // The save button
-        const btn = document.createElement('button');
-        btn.id = 'pd-library-btn';
-        btn.innerHTML = '&#9776; Library';
-        btn.title = 'Save to POWERDIGGER Library';
-        btn.style.cssText = 'background:#1a1a2e;color:#e0e0ff;border:1.5px solid #4a90d9;border-radius:6px;padding:4px 10px;font-weight:bold;cursor:pointer;font-size:12px;margin-top:6px;';
-        btn.onmouseenter = () => btn.style.background = '#4a90d9';
-        btn.onmouseleave = () => { if (!picker.classList.contains('pd-open')) btn.style.background = '#1a1a2e'; };
-
-        // The folder picker dropdown
-        const picker = document.createElement('div');
-        picker.id = 'pd-library-picker';
-        picker.style.cssText = 'display:none;position:absolute;z-index:99999;background:#1a1a2e;border:1.5px solid #4a90d9;border-radius:8px;padding:8px;min-width:200px;box-shadow:0 4px 18px rgba(0,0,0,0.5);font-size:13px;';
-
-        function refreshPicker() {
-                picker.innerHTML = '';
-                chrome.runtime.sendMessage({type: 'libraryGet'}, lib => {
-                        // "In these folders" status
-                        chrome.runtime.sendMessage({type: 'libraryGetFoldersForTrack', trackId: trackMeta.id}, inFolders => {
-                                const order = lib.folderOrder || [];
-                                const folders = lib.folders || {};
-
-                                if (order.length === 0) {
-                                        const empty = document.createElement('div');
-                                        empty.style.cssText = 'color:#aaa;padding:4px 0 8px;';
-                                        empty.textContent = 'No folders yet.';
-                                        picker.appendChild(empty);
-                                } else {
-                                        order.forEach(id => {
-                                                const f = folders[id];
-                                                if (!f) return;
-                                                const row = document.createElement('div');
-                                                row.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 2px;cursor:pointer;border-radius:4px;';
-                                                row.onmouseenter = () => row.style.background = 'rgba(74,144,217,0.18)';
-                                                row.onmouseleave = () => row.style.background = '';
-                                                const dot = document.createElement('span');
-                                                dot.style.cssText = `display:inline-block;width:10px;height:10px;border-radius:50%;background:${f.color || '#4a90d9'};flex-shrink:0;`;
-                                                const label = document.createElement('span');
-                                                label.style.cssText = 'flex:1;color:#e0e0ff;';
-                                                label.textContent = f.name;
-                                                const tick = document.createElement('span');
-                                                tick.style.cssText = 'color:#4a90d9;font-size:15px;';
-                                                tick.textContent = inFolders.includes(id) ? '✓' : '';
-                                                row.appendChild(dot);
-                                                row.appendChild(label);
-                                                row.appendChild(tick);
-                                                row.onclick = () => {
-                                                        if (inFolders.includes(id)) {
-                                                                chrome.runtime.sendMessage({type: 'libraryRemoveTrack', folderId: id, trackId: trackMeta.id}, () => refreshPicker());
-                                                        } else {
-                                                                chrome.runtime.sendMessage({type: 'libraryAddTrack', folderId: id, track: trackMeta}, () => refreshPicker());
-                                                        }
-                                                };
-                                                picker.appendChild(row);
-                                        });
-                                }
-
-                                // Divider
-                                const hr = document.createElement('hr');
-                                hr.style.cssText = 'border:none;border-top:1px solid #333;margin:6px 0;';
-                                picker.appendChild(hr);
-
-                                // New folder row
-                                const newRow = document.createElement('div');
-                                newRow.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 2px;cursor:pointer;border-radius:4px;';
-                                newRow.onmouseenter = () => newRow.style.background = 'rgba(74,144,217,0.18)';
-                                newRow.onmouseleave = () => newRow.style.background = '';
-                                newRow.innerHTML = '<span style="color:#4a90d9;font-size:16px;">+</span><span style="color:#e0e0ff;">New folder…</span>';
-                                newRow.onclick = () => {
-                                        const name = prompt('Folder name:');
-                                        if (!name) return;
-                                        chrome.runtime.sendMessage({type: 'libraryCreateFolder', name, color: '#4a90d9'}, res => {
-                                                if (res) chrome.runtime.sendMessage({type: 'libraryAddTrack', folderId: res.id, track: trackMeta}, () => refreshPicker());
-                                        });
-                                };
-                                picker.appendChild(newRow);
-
-                                // Open library link
-                                const libLink = document.createElement('div');
-                                libLink.style.cssText = 'padding:6px 2px 2px;cursor:pointer;color:#4a90d9;font-size:12px;text-align:right;';
-                                libLink.textContent = 'Open Library →';
-                                libLink.onclick = () => chrome.runtime.sendMessage({type: 'openLibrary'});
-                                picker.appendChild(libLink);
-                        });
-                });
-        }
-
-        btn.onclick = (e) => {
-                e.stopPropagation();
-                if (picker.classList.contains('pd-open')) {
-                        picker.classList.remove('pd-open');
-                        picker.style.display = 'none';
-                        btn.style.background = '#1a1a2e';
-                } else {
-                        refreshPicker();
-                        picker.classList.add('pd-open');
-                        picker.style.display = 'block';
-                        btn.style.background = '#4a90d9';
-                }
-        };
-
-        document.addEventListener('click', (e) => {
-                if (!picker.contains(e.target) && e.target !== btn) {
-                        picker.classList.remove('pd-open');
-                        picker.style.display = 'none';
-                        btn.style.background = '#1a1a2e';
-                }
-        });
-
-        insertionPoint.appendChild(document.createElement('br'));
-        insertionPoint.appendChild(btn);
-        // Wrap in a relative container so the picker positions correctly
-        const wrap = document.createElement('span');
-        wrap.style.position = 'relative';
-        wrap.appendChild(picker);
-        insertionPoint.appendChild(wrap);
-}
