@@ -1,7 +1,8 @@
 // Entry point: fetch user options then bootstrap each feature.
 // All feature functions (bmcButtons, historyLinks, etc.) are defined in their
 // own files and attached to the shared PD namespace.
-PD.api.getOptions((options) => {
+PD.api.getOptions((rawOptions) => {
+        const options = PD.optionSchema ? PD.optionSchema.normalize(rawOptions) : rawOptions;
         const url = PD.currentUrl;
         const isTrackOrAlbum = url.includes('/track/') || url.includes('/album/');
 
@@ -12,7 +13,7 @@ PD.api.getOptions((options) => {
                 PD.recolorBanner();
                 PD.onHistoryChange();
                 if (!isTrackOrAlbum) {
-                        const grids = document.getElementById('grids');
+                        const grids = PD.dom.qs('#grids');
                         if (grids) new MutationObserver(PD.onHistoryChange).observe(grids, { childList: true, subtree: true });
                 }
                 document.addEventListener('visibilitychange', () => {
@@ -23,7 +24,7 @@ PD.api.getOptions((options) => {
         if (options.prefPlayHistory) {
                 PD.onTrackChange();
                 if (!isTrackOrAlbum) {
-                        const grids = document.getElementById('grids');
+                        const grids = PD.dom.qs('#grids');
                         if (grids) new MutationObserver(PD.onTrackChange).observe(grids, { childList: true, subtree: true });
                 }
                 document.addEventListener('visibilitychange', () => {

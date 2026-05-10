@@ -72,23 +72,23 @@ function uploadAll(){
 }
 
 function restoreOptions() {
-        chrome.storage.local.get({
-                        prefHistory: false,
-                        prefPlayHistory: false,
-                        prefBmcButtons: false,
-                        prefBmcKeys: null,
-                        prefBpm: false,
-                        prefJump: false,
-                        prefJumpPct: 0,
-                        prefCommons: false
-                },
-                (items) => {
+        const defaults = window.PDOptionSchema ? window.PDOptionSchema.DEFAULTS : {
+                prefHistory: false,
+                prefPlayHistory: false,
+                prefBmcButtons: false,
+                prefBmcKeys: null,
+                prefBpm: false,
+                prefJump: false,
+                prefJumpPct: 0,
+                prefCommons: false
+        };
+        chrome.storage.local.get(defaults,
+                (rawItems) => {
+                        const items = window.PDOptionSchema ? window.PDOptionSchema.normalizeOptions(rawItems) : rawItems;
                         oHistory.checked = items.prefHistory;
                         oTrackHistory.checked = items.prefPlayHistory;
                         oBMC.checked = items.prefBmcButtons;
-                        // Migrate: legacy installs only have prefBmcButtons; mirror it into prefBmcKeys.
-                        const keysVal = items.prefBmcKeys === null ? items.prefBmcButtons : items.prefBmcKeys;
-                        if (oBMCKeys) oBMCKeys.checked = keysVal;
+                        if (oBMCKeys) oBMCKeys.checked = items.prefBmcKeys;
                         oJump.checked = items.prefJump;
                         oJumpNR.value = items.prefJumpPct;
                         oCommons.checked = items.prefCommons;

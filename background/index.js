@@ -5,17 +5,7 @@ import { local, pickByPrefix } from './storage.js';
 import { TRACK_KEY_PREFIX, recordTrackPlay, getTrackCount } from './trackHistory.js';
 import { queueFanPage, validateBMC } from './fanQueue.js';
 import { isAllowedFetch } from './utils.js';
-
-const OPTION_DEFAULTS = {
-        prefHistory: false,
-        prefPlayHistory: false,
-        prefBmcButtons: false,
-        prefBmcKeys: null, // null = not yet set; migrate from prefBmcButtons below
-        prefBpm: false,
-        prefJump: false,
-        prefJumpPct: 0,
-        prefCommons: false,
-};
+import { OPTION_DEFAULTS, normalizeOptions } from './optionsSchema.js';
 
 function requestPermission(permission) {
         return new Promise((resolve) => {
@@ -27,10 +17,8 @@ chrome.runtime.onMessage.addListener(function (message, sender, senderResponse) 
 
         // ── Options ──────────────────────────────────────────────────────────
         if (message.type === MSG.OPTIONS) {
-                local.get(OPTION_DEFAULTS).then((options) => {
-                        // Backward-compat: mirror prefBmcButtons into prefBmcKeys for users upgrading from <=1.0.4.
-                        if (options.prefBmcKeys === null) options.prefBmcKeys = options.prefBmcButtons;
-                        senderResponse(options);
+                local.get(OPTION_DEFAULTS).then((rawOptions) => {
+                        senderResponse(normalizeOptions(rawOptions));
                 });
         }
 

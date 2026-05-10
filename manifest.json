@@ -15,7 +15,9 @@
                 "matches": ["*://*.bandcamp.com/*"],
                 "js": [
                         "content/shared.js",
+                        "content/optionsSchema.js",
                         "content/api.js",
+                        "content/dom.js",
                         "content/jumpTime.js",
                         "content/bpm.js",
                         "content/historyLinks.js",
@@ -27,7 +29,7 @@
                 "run_at": "document_end"
         }, {
                 "matches": ["*://*.buymusic.club/*"],
-                "js": ["bmc.js"],
+                "js": ["optionsSchema.js", "bmc.js"],
                 "run_at": "document_end"
         }],
         "host_permissions": [

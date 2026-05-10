@@ -9,7 +9,8 @@ function send(type, payload = {}, cb) {
 let skipValue = 0;
 const audio = document.querySelector('audio');
 
-send(MSG.OPTIONS, {}, (options) => {
+send(MSG.OPTIONS, {}, (rawOptions) => {
+        const options = window.PDOptionSchema ? window.PDOptionSchema.normalizeOptions(rawOptions) : rawOptions;
         if (options.prefBmcKeys) {
                 window.addEventListener('keydown', function (event) {
                         if (event.key === 'ArrowUp') {

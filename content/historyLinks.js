@@ -3,7 +3,7 @@
 // ── Top-banner recolor ────────────────────────────────────────────────────
 PD.recolorBanner = function () {
         PD.api.historyCheck(PD.currentUrl, (response) => {
-                const menubar = document.getElementById('menubar');
+                const menubar = PD.dom.qs('#menubar');
                 if (!menubar) return;
                 if (response && response.error) {
                         menubar.style.backgroundColor = 'yellow';          // perm denied / error
@@ -20,7 +20,7 @@ PD.onHistoryChange = PD.debounce(() => PD.recolorLinks(), 50);
 
 // ── Batched link recolor ──────────────────────────────────────────────────
 PD.recolorLinks = function () {
-        const alllinks = document.querySelectorAll('a[href]');
+        const alllinks = PD.dom.qsa('a[href]');
         const byHref = new Map(); // href -> [elements]
         alllinks.forEach((a) => {
                 let href;

@@ -20,8 +20,8 @@ PD.recolorTracks = function () {
 // ── Track page ────────────────────────────────────────────────────────────
 function trackPageRecolor() {
         if (!PD.data) return;
-        const playbutton = document.querySelector('div.playbutton');
-        const titleEl = document.querySelector('h2.trackTitle');
+        const playbutton = PD.dom.qs('div.playbutton');
+        const titleEl = PD.dom.qs('h2.trackTitle');
         if (!playbutton || !titleEl) return;
         titleEl.style.color = 'black';
 
@@ -51,9 +51,9 @@ function trackPageRecolor() {
 // ── Album page ────────────────────────────────────────────────────────────
 function albumPageRecolor() {
         if (!PD.data || !PD.data.track) return;
-        const playbutton = document.querySelector('div.playbutton');
-        const table = document.querySelectorAll('tr.track_row_view');
-        const trackTableEl = document.getElementById('track_table');
+        const playbutton = PD.dom.qs('div.playbutton');
+        const table = PD.dom.qsa('tr.track_row_view');
+        const trackTableEl = PD.dom.qs('#track_table');
         if (!playbutton || !trackTableEl) return;
 
         trackTableEl
@@ -77,7 +77,7 @@ function albumPageRecolor() {
                                 (!mutation.oldValue || !mutation.oldValue.match(/\bplaying\b/)) &&
                                 mutation.target.classList && mutation.target.classList.contains('playing')
                         ) {
-                                const currentTrackEl = document.querySelector('tr.current_track');
+                                const currentTrackEl = PD.dom.qs('tr.current_track');
                                 if (!currentTrackEl) return;
                                 const rel = currentTrackEl.getAttribute('rel') || '';
                                 const idx = parseInt(rel.replace('tracknum=', ''), 10) - 1;
@@ -96,7 +96,7 @@ function profilePageRecolor() {
         // Disconnect stale observers before re-scanning.
         PD.observers.forEach((obs) => obs.disconnect());
         PD.observers = [];
-        document.querySelectorAll('li.collection-item-container').forEach(checkPlays);
+        PD.dom.qsa('li.collection-item-container').forEach(checkPlays);
 }
 
 function checkPlays(item) {
