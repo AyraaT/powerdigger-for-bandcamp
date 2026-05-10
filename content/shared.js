@@ -4,27 +4,25 @@
 
 window.PD = window.PD || {};
 
-PD.currentUrl       = window.location.href;
-PD.nameSection   = document.getElementById('name-section');
-PD.audio            = document.querySelector('audio');
-PD.data             = null;     // ld+json, populated below for track/album pages
-PD.skipValue        = 0;
-PD.observers    = [];
+PD.currentUrl = window.location.href;
+PD.nameSection = document.getElementById('name-section');
+PD.audio = document.querySelector('audio');
+PD.data = null; // ld+json, populated below for track/album pages
+PD.skipValue = 0;
+PD.observers = [];
 
 // Load ld+json once — used by trackHistory, bmcButtons, and (future) library.
 if (PD.currentUrl.includes('/track/') || PD.currentUrl.includes('/album/')) {
-        try {
-                PD.data = JSON.parse(
-                        document.querySelector('script[type="application/ld+json"]').innerHTML
-                );
-        } catch (_) {}
+  try {
+    PD.data = JSON.parse(document.querySelector('script[type="application/ld+json"]').innerHTML);
+  } catch {}
 }
 
 // Debounce helper — prevents observer double-fires.
 PD.debounce = function (fn, ms) {
-        let t;
-        return function (...args) {
-                clearTimeout(t);
-                t = setTimeout(() => fn(...args), ms);
-        };
+  let t;
+  return function (...args) {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), ms);
+  };
 };

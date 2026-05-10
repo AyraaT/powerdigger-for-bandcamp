@@ -1,0 +1,14 @@
+{
+  "name": "powerdigger-for-bandcamp",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "format:check": "prettier --check .",
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "eslint": "^9.26.0",
+    "prettier": "^3.5.3"
+  }
+}

@@ -1,46 +1,37 @@
-// Message constants + typed-ish API wrapper for content scripts.
 window.PD = window.PD || {};
 
-PD.MSG = Object.freeze({
-        OPTIONS: 'options',
-        HISTORY_CHECK: 'historyCheck',
-        HISTORY_CHECK_BATCH: 'historyCheckBatch',
-        TRACK_GET_COUNT: 'trackGetCount',
-        TRACK_PLAY: 'trackPlay',
-        BMC_VALIDATE: 'bmcValidate',
-        FAN_PAGE: 'fanPage',
-});
+const MSG = globalThis.PD_CONTRACTS.MSG;
 
 PD.api = {
-        send(type, payload = {}, cb) {
-                chrome.runtime.sendMessage({ type, ...payload }, cb);
-        },
+  send(type, payload = {}) {
+    return chrome.runtime.sendMessage({ type, ...payload });
+  },
 
-        getOptions(cb) {
-                this.send(PD.MSG.OPTIONS, {}, cb);
-        },
+  getOptions() {
+    return this.send(MSG.OPTIONS);
+  },
 
-        historyCheck(url, cb) {
-                this.send(PD.MSG.HISTORY_CHECK, { url }, cb);
-        },
+  historyCheck(url) {
+    return this.send(MSG.HISTORY_CHECK, { url });
+  },
 
-        historyCheckBatch(urls, cb) {
-                this.send(PD.MSG.HISTORY_CHECK_BATCH, { urls }, cb);
-        },
+  historyCheckBatch(urls) {
+    return this.send(MSG.HISTORY_CHECK_BATCH, { urls });
+  },
 
-        trackGetCount(trackid, cb) {
-                this.send(PD.MSG.TRACK_GET_COUNT, { trackid }, cb);
-        },
+  trackGetCount(trackid) {
+    return this.send(MSG.TRACK_GET_COUNT, { trackid });
+  },
 
-        trackPlay(trackid, cb) {
-                this.send(PD.MSG.TRACK_PLAY, { trackid }, cb);
-        },
+  trackPlay(trackid) {
+    return this.send(MSG.TRACK_PLAY, { trackid });
+  },
 
-        bmcValidate(url, cb) {
-                this.send(PD.MSG.BMC_VALIDATE, { url }, cb);
-        },
+  bmcValidate(url) {
+    return this.send(MSG.BMC_VALIDATE, { url });
+  },
 
-        fanPage(url, cb) {
-                this.send(PD.MSG.FAN_PAGE, { url }, cb);
-        },
+  fanPage(url) {
+    return this.send(MSG.FAN_PAGE, { url });
+  },
 };
