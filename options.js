@@ -1,5 +1,4 @@
 const MSG = {
-        OPTIONS: 'options',
         BACKUP_DOWNLOAD: 'backupDownload',
         PERM_CHECK_HISTORY: 'permCheckHistory',
         PERM_CHECK_EXTENSIONS: 'permCheckExtensions',
@@ -125,7 +124,7 @@ function permCheckExtensions() {
             if (oBPM.checked){
                         send(MSG.PERM_CHECK_EXTENSIONS, {}, valid => {
                         if (!valid){
-                                alert("To use this option, please install and activate the two extensions I mention.\n\n(Installation pages have been opened in the background)");
+                                alert("To use this option, please install and enable the two required extensions.\n\nLinks are in this options page below.");
                                 oBPM.checked = false;
                         }
                 });           

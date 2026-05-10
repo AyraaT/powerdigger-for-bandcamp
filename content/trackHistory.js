@@ -53,9 +53,10 @@ function albumPageRecolor() {
         if (!PD.data || !PD.data.track) return;
         const playbutton = document.querySelector('div.playbutton');
         const table = document.querySelectorAll('tr.track_row_view');
-        if (!playbutton) return;
+        const trackTableEl = document.getElementById('track_table');
+        if (!playbutton || !trackTableEl) return;
 
-        document.getElementById('track_table')
+        trackTableEl
                 .querySelectorAll('a, div, span')
                 .forEach((el) => { el.style.color = 'black'; });
 
@@ -76,8 +77,11 @@ function albumPageRecolor() {
                                 (!mutation.oldValue || !mutation.oldValue.match(/\bplaying\b/)) &&
                                 mutation.target.classList && mutation.target.classList.contains('playing')
                         ) {
-                                const rel = document.querySelector('tr.current_track').getAttribute('rel') || '';
+                                const currentTrackEl = document.querySelector('tr.current_track');
+                                if (!currentTrackEl) return;
+                                const rel = currentTrackEl.getAttribute('rel') || '';
                                 const idx = parseInt(rel.replace('tracknum=', ''), 10) - 1;
+                                if (!Number.isFinite(idx) || idx < 0 || idx >= trackIDs.length) return;
                                 PD.api.trackPlay(trackIDs[idx], (count) => {
                                         if (table[idx]) table[idx].style.backgroundColor = playColor(count);
                                 });

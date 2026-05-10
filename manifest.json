@@ -30,7 +30,10 @@
                 "js": ["bmc.js"],
                 "run_at": "document_end"
         }],
-        "host_permissions": ["https://www.buymusic.club/*"],
+        "host_permissions": [
+                "https://www.buymusic.club/*",
+                "https://*.bandcamp.com/*"
+        ],
         "background": {
                 "service_worker": "background/index.js",
                 "type": "module"
