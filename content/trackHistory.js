@@ -7,11 +7,11 @@ function playColor(count) {
 }
 
 // ── Debounced observer entry point ────────────────────────────────────────
-PD.trackcatcher = PD.debounce(() => PD.trackRecolor(), 50);
+PD.onTrackChange = PD.debounce(() => PD.recolorTracks(), 50);
 
 // ── Main router ───────────────────────────────────────────────────────────
-PD.trackRecolor = function () {
-        const url = PD.currenturl;
+PD.recolorTracks = function () {
+        const url = PD.currentUrl;
         if (url.includes('/track/'))  { trackPageRecolor(); return; }
         if (url.includes('/album/'))  { albumPageRecolor(); return; }
         if (!url.includes('/tag/'))   { profilePageRecolor(); }
@@ -28,7 +28,7 @@ function trackPageRecolor() {
         const trackId = PD.data.additionalProperty[0].value.toString();
 
         // Set initial color from stored history.
-        chrome.runtime.sendMessage({ type: 'trackhistory', trackid: trackId }, (count) => {
+        chrome.runtime.sendMessage({ type: 'trackGetCount', trackid: trackId }, (count) => {
                 if (count) titleEl.style.backgroundColor = playColor(count);
         });
 
@@ -39,7 +39,7 @@ function trackPageRecolor() {
                                 (!mutation.oldValue || !mutation.oldValue.match(/\bplaying\b/)) &&
                                 mutation.target.classList && mutation.target.classList.contains('playing')
                         ) {
-                                chrome.runtime.sendMessage({ type: 'trackplay', trackid: trackId }, (count) => {
+                                chrome.runtime.sendMessage({ type: 'trackPlay', trackid: trackId }, (count) => {
                                         titleEl.style.backgroundColor = playColor(count);
                                 });
                         }
@@ -64,7 +64,7 @@ function albumPageRecolor() {
 
         // Set initial colors.
         trackIDs.forEach((id, i) => {
-                chrome.runtime.sendMessage({ type: 'trackhistory', trackid: id }, (count) => {
+                chrome.runtime.sendMessage({ type: 'trackGetCount', trackid: id }, (count) => {
                         if (count && table[i]) table[i].style.backgroundColor = playColor(count);
                 });
         });
@@ -78,7 +78,7 @@ function albumPageRecolor() {
                         ) {
                                 const rel = document.querySelector('tr.current_track').getAttribute('rel') || '';
                                 const idx = parseInt(rel.replace('tracknum=', ''), 10) - 1;
-                                chrome.runtime.sendMessage({ type: 'trackplay', trackid: trackIDs[idx] }, (count) => {
+                                chrome.runtime.sendMessage({ type: 'trackPlay', trackid: trackIDs[idx] }, (count) => {
                                         if (table[idx]) table[idx].style.backgroundColor = playColor(count);
                                 });
                         }
@@ -90,8 +90,8 @@ function albumPageRecolor() {
 // ── Profile page ──────────────────────────────────────────────────────────
 function profilePageRecolor() {
         // Disconnect stale observers before re-scanning.
-        PD.ObserverArray.forEach((obs) => obs.disconnect());
-        PD.ObserverArray = [];
+        PD.observers.forEach((obs) => obs.disconnect());
+        PD.observers = [];
         document.querySelectorAll('li.collection-item-container').forEach(checkPlays);
 }
 
@@ -100,7 +100,7 @@ function checkPlays(item) {
         if (!trackId) return;
 
         // Set initial color.
-        chrome.runtime.sendMessage({ type: 'trackhistory', trackid: trackId }, (count) => {
+        chrome.runtime.sendMessage({ type: 'trackGetCount', trackid: trackId }, (count) => {
                 if (count) item.style.backgroundColor = playColor(count);
         });
 
@@ -111,12 +111,12 @@ function checkPlays(item) {
                                 (!mutation.oldValue || !mutation.oldValue.match(/\bplaying\b/)) &&
                                 mutation.target.classList && mutation.target.classList.contains('playing')
                         ) {
-                                chrome.runtime.sendMessage({ type: 'trackplay', trackid: trackId }, (count) => {
+                                chrome.runtime.sendMessage({ type: 'trackPlay', trackid: trackId }, (count) => {
                                         item.style.backgroundColor = playColor(count);
                                 });
                         }
                 });
         });
         observer.observe(item, { attributes: true, attributeOldValue: true, attributeFilter: ['class'] });
-        PD.ObserverArray.push(observer);
+        PD.observers.push(observer);
 }

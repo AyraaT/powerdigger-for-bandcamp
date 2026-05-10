@@ -2,7 +2,7 @@
 // how many tracks you share with each fan.
 // Requests are throttled and retried in the service worker (fanQueue.js).
 
-PD.commonFanTracks = function () {
+PD.injectFanBadges = function () {
         const fans = document.getElementsByClassName('pic');
         for (const fan of fans) {
                 const nameEl = fan.getElementsByClassName('name')[0];
@@ -13,7 +13,7 @@ PD.commonFanTracks = function () {
                 badge.textContent  = '(…)';
                 if (nameEl) nameEl.appendChild(badge);
 
-                chrome.runtime.sendMessage({ type: 'FanPage', url: fan.href }, (response) => {
+                chrome.runtime.sendMessage({ type: 'fanPage', url: fan.href }, (response) => {
                         if (!response) {
                                 badge.textContent = '(?)';
                                 badge.title = 'Could not fetch (rate-limited or network error).';

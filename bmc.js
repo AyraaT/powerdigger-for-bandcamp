@@ -4,7 +4,7 @@ const audio = document.querySelector("audio");
 chrome.runtime.sendMessage({
         type: 'options'
 }, options => {
-        if (options.obmcKeys) {
+        if (options.prefBmcKeys) {
                 window.addEventListener("keydown", function(event) {
                         if (event.key === "ArrowUp") {
                                 audio.currentTime = 0;
@@ -17,17 +17,17 @@ chrome.runtime.sendMessage({
                         }
                 });
         }
-        if (options.ohistory) {
+        if (options.prefHistory) {
                 
         }
-        if (options.otrhistory) {
+        if (options.prefPlayHistory) {
                 
         }
-        if (options.obpm) {
+        if (options.prefBpm) {
                
         }
-        if (options.ojump) {
-                skipValue = options.ojumpNr
+        if (options.prefJump) {
+                skipValue = options.prefJumpPct
                 audio.addEventListener('loadeddata', jumpTime);
         }
 });

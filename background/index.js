@@ -9,23 +9,23 @@ chrome.runtime.onMessage.addListener(function (message, sender, senderResponse) 
         // ── Options ──────────────────────────────────────────────────────────
         if (message.type === 'options') {
                 chrome.storage.local.get({
-                        ohistory:   false,
-                        otrhistory: false,
-                        obmc:       false,
-                        obmcKeys:   null,   // null = not yet set; migrate from obmc below
-                        obpm:       false,
-                        ojump:      false,
-                        ojumpNr:    0,
-                        ocommons:   false,
+                        prefHistory:   false,
+                        prefPlayHistory: false,
+                        prefBmcButtons:       false,
+                        prefBmcKeys:   null,   // null = not yet set; migrate from prefBmcButtons below
+                        prefBpm:       false,
+                        prefJump:      false,
+                        prefJumpPct:    0,
+                        prefCommons:   false,
                 }, (options) => {
-                        // Backward-compat: mirror obmc into obmcKeys for users upgrading from <=1.0.4.
-                        if (options.obmcKeys === null) options.obmcKeys = options.obmc;
+                        // Backward-compat: mirror prefBmcButtons into prefBmcKeys for users upgrading from <=1.0.4.
+                        if (options.prefBmcKeys === null) options.prefBmcKeys = options.prefBmcButtons;
                         senderResponse(options);
                 });
         }
 
         // ── Backup / restore ─────────────────────────────────────────────────
-        if (message.type === 'downloadFull') {
+        if (message.type === 'backupDownload') {
                 chrome.permissions.request({ permissions: ['downloads'] }, (granted) => {
                         if (!granted) return;
                         // Export all tk: keys as a legacy-compatible {trackHistory:{}} blob.
@@ -43,16 +43,16 @@ chrome.runtime.onMessage.addListener(function (message, sender, senderResponse) 
         }
 
         // ── 3rd-party extension check ────────────────────────────────────────
-        if (message.type === 'checkExtensions') {
+        if (message.type === 'permCheckExtensions') {
                 chrome.permissions.request({ permissions: ['management'] }, (granted) => {
-                        if (!granted) { chrome.storage.local.set({ obpm: false }); senderResponse(false); return; }
+                        if (!granted) { chrome.storage.local.set({ prefBpm: false }); senderResponse(false); return; }
                         const extensionBCE = 'padcfdpdlnpdojcihidkgjnmleeingep';
                         const extensionBCT = 'iniomjoihcjgakkfaebmcbnhmiobppel';
                         chrome.management.getAll((extensions) => {
                                 const ok =
                                         extensions.some((e) => e.id === extensionBCE && e.enabled) &&
                                         extensions.some((e) => e.id === extensionBCT && e.enabled);
-                                chrome.storage.local.set({ obpm: ok });
+                                chrome.storage.local.set({ prefBpm: ok });
                                 senderResponse(ok);
                                 // Note: don't auto-open tabs — options page links guide the user.
                         });
@@ -60,23 +60,23 @@ chrome.runtime.onMessage.addListener(function (message, sender, senderResponse) 
         }
 
         // ── Browser history permission ────────────────────────────────────────
-        if (message.type === 'checkHistory') {
+        if (message.type === 'permCheckHistory') {
                 chrome.permissions.request({ permissions: ['history'] }, (granted) => {
-                        chrome.storage.local.set({ ohistory: granted });
+                        chrome.storage.local.set({ prefHistory: granted });
                 });
         }
 
         // ── Track play history ────────────────────────────────────────────────
-        if (message.type === 'trackhistory') {
+        if (message.type === 'trackGetCount') {
                 getTrackCount(message.trackid).then((count) => senderResponse(count));
         }
 
-        if (message.type === 'trackplay') {
+        if (message.type === 'trackPlay') {
                 recordTrackPlay(message.trackid).then((count) => senderResponse(count));
         }
 
         // ── Browser history lookup (batch) ────────────────────────────────────
-        if (message.type === 'nobrowserhistoryBatch') {
+        if (message.type === 'historyCheckBatch') {
                 const urls = Array.isArray(message.urls) ? message.urls : [];
                 const cutoff = Date.now() - 3000;
                 const results = new Array(urls.length).fill(null);
@@ -98,7 +98,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, senderResponse) 
         }
 
         // ── Browser history lookup (single — used for top banner) ─────────────
-        if (message.type === 'nobrowserhistory') {
+        if (message.type === 'historyCheck') {
                 try {
                         chrome.history.getVisits({ url: message.url }, (result) => {
                                 if (chrome.runtime.lastError || !result) {
@@ -114,12 +114,12 @@ chrome.runtime.onMessage.addListener(function (message, sender, senderResponse) 
         }
 
         // ── Buy Music Club validation ──────────────────────────────────────────
-        if (message.type === 'validate') {
+        if (message.type === 'bmcValidate') {
                 validateBMC(message.url).then(senderResponse);
         }
 
         // ── Fan-page common tracks ─────────────────────────────────────────────
-        if (message.type === 'FanPage') {
+        if (message.type === 'fanPage') {
                 if (!isAllowedFetch(message.url, ['bandcamp.com'])) {
                         senderResponse(null);
                         return true;

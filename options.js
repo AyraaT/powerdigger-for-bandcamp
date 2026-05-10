@@ -13,7 +13,7 @@ oHistory.addEventListener('change', historyPermission);
 oTrackHistory.addEventListener('change', saveOptions);
 oBMC.addEventListener('change', saveOptions);
 if (oBMCKeys) oBMCKeys.addEventListener('change', saveOptions);
-oBPM.addEventListener('change', checkExtensions);
+oBPM.addEventListener('change', permCheckExtensions);
 oJump.addEventListener('change', saveOptions);
 oJumpNR.addEventListener('change', percentageLimits);
 oCommons.addEventListener('change', saveOptions);
@@ -26,12 +26,12 @@ document.getElementById("emailbutton").addEventListener('click', function () {ch
 
 function saveOptions() {
         const data = {
-                otrhistory: oTrackHistory.checked,
-                obmc: oBMC.checked,
-                ojump: oJump.checked,
-                ocommons: oCommons.checked
+                prefPlayHistory: oTrackHistory.checked,
+                prefBmcButtons: oBMC.checked,
+                prefJump: oJump.checked,
+                prefCommons: oCommons.checked
         };
-        if (oBMCKeys) data.obmcKeys = oBMCKeys.checked;
+        if (oBMCKeys) data.prefBmcKeys = oBMCKeys.checked;
         chrome.storage.local.set(data);
 }
 
@@ -63,68 +63,68 @@ function uploadAll(){
 
 function restoreOptions() {
         chrome.storage.local.get({
-                        ohistory: false,
-                        otrhistory: false,
-                        obmc: false,
-                        obmcKeys: null,
-                        obpm: false,
-                        ojump: false,
-                        ojumpNr: 0,
-                        ocommons: false
+                        prefHistory: false,
+                        prefPlayHistory: false,
+                        prefBmcButtons: false,
+                        prefBmcKeys: null,
+                        prefBpm: false,
+                        prefJump: false,
+                        prefJumpPct: 0,
+                        prefCommons: false
                 },
                 (items) => {
-                        oHistory.checked = items.ohistory;
-                        oTrackHistory.checked = items.otrhistory;
-                        oBMC.checked = items.obmc;
-                        // Migrate: legacy installs only have obmc; mirror it into obmcKeys.
-                        const keysVal = items.obmcKeys === null ? items.obmc : items.obmcKeys;
+                        oHistory.checked = items.prefHistory;
+                        oTrackHistory.checked = items.prefPlayHistory;
+                        oBMC.checked = items.prefBmcButtons;
+                        // Migrate: legacy installs only have prefBmcButtons; mirror it into prefBmcKeys.
+                        const keysVal = items.prefBmcKeys === null ? items.prefBmcButtons : items.prefBmcKeys;
                         if (oBMCKeys) oBMCKeys.checked = keysVal;
-                        oJump.checked = items.ojump;
-                        oJumpNR.value = items.ojumpNr;
-                        oCommons.checked = items.ocommons;
-                        if(items.obpm){
-                                    onstartCheckExtensions();          
+                        oJump.checked = items.prefJump;
+                        oJumpNR.value = items.prefJumpPct;
+                        oCommons.checked = items.prefCommons;
+                        if(items.prefBpm){
+                                    permCheckExtensionsOnStart();          
                         }
                 });
 }
 
 function historyPermission() {
             if (oHistory.checked){
-                            chrome.runtime.sendMessage({type: 'checkHistory'});         
+                            chrome.runtime.sendMessage({type: 'permCheckHistory'});         
             }else{
-                            chrome.storage.local.set({ohistory: false});
+                            chrome.storage.local.set({prefHistory: false});
             }                       
 }
  
 
 function download() {
-                chrome.runtime.sendMessage({type: 'downloadFull'});                   
+                chrome.runtime.sendMessage({type: 'backupDownload'});                   
 }
 
 function percentageLimits() {
         if (oJumpNR.value > 100 || oJumpNR.value < 0) {
                 alert("Please enter a value between 0 and 100 percent!");
         } else {
-                chrome.storage.local.set({ojumpNr: oJumpNR.value});
+                chrome.storage.local.set({prefJumpPct: oJumpNR.value});
 
         }
 }
 
-function checkExtensions() {
+function permCheckExtensions() {
             if (oBPM.checked){
-                        chrome.runtime.sendMessage({type: 'checkExtensions'}, valid => {
+                        chrome.runtime.sendMessage({type: 'permCheckExtensions'}, valid => {
                         if (!valid){
                                 alert("To use this option, please install and activate the two extensions I mention.\n\n(Installation pages have been opened in the background)");
                                 oBPM.checked = false;
                         }
                 });           
                  }else{
-                                                chrome.storage.local.set({obpm: false});
+                                                chrome.storage.local.set({prefBpm: false});
             }   
                                          
 }
 
-function onstartCheckExtensions() {
+function permCheckExtensionsOnStart() {
                                                 const extensionBCE = 'padcfdpdlnpdojcihidkgjnmleeingep';
                                                 const extensionBCT = 'iniomjoihcjgakkfaebmcbnhmiobppel';
 
@@ -132,10 +132,10 @@ function onstartCheckExtensions() {
                                                         const BCEisInstalled = extensions.some(function(e) {return e.id === extensionBCE && e.enabled;});
                                                         const BCTisInstalled = extensions.some(function(e) {return e.id === extensionBCT && e.enabled;});
                                                         if (BCEisInstalled && BCTisInstalled){
-                                                                chrome.storage.local.set({obpm: true});
+                                                                chrome.storage.local.set({prefBpm: true});
                                                                 oBPM.checked = true;
                                                         } else {
-                                                                chrome.storage.local.set({obpm: false});
+                                                                chrome.storage.local.set({prefBpm: false});
                                                                 oBPM.checked = false;
                                                                 // Show a single CTA in the options page instead of silently opening tabs.
                                                                 alert("To keep using the '3rd Party Optimizer', please install and enable both required extensions.\n\nLinks are in the options page below.");

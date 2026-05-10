@@ -1,8 +1,8 @@
 // 3rd-Party Optimizer: auto-click the BPM load button after 1 s.
 
-PD.clickBPM = function () {
+PD.autoBpm = function () {
         setTimeout(() => {
-                if (PD.currenturl.includes('/track/') || PD.currenturl.includes('/album/')) {
+                if (PD.currentUrl.includes('/track/') || PD.currentUrl.includes('/album/')) {
                         const spacer = document.createElement('div');
                         spacer.style.height = '40px';
                         const app = document.getElementById('pitchSliderApp');

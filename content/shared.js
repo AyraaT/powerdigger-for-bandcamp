@@ -4,15 +4,15 @@
 
 window.PD = window.PD || {};
 
-PD.currenturl       = window.location.href;
-PD.insertionPoint   = document.getElementById('name-section');
+PD.currentUrl       = window.location.href;
+PD.nameSection   = document.getElementById('name-section');
 PD.audio            = document.querySelector('audio');
 PD.data             = null;     // ld+json, populated below for track/album pages
 PD.skipValue        = 0;
-PD.ObserverArray    = [];
+PD.observers    = [];
 
 // Load ld+json once — used by trackHistory, bmcButtons, and (future) library.
-if (PD.currenturl.includes('/track/') || PD.currenturl.includes('/album/')) {
+if (PD.currentUrl.includes('/track/') || PD.currentUrl.includes('/album/')) {
         try {
                 PD.data = JSON.parse(
                         document.querySelector('script[type="application/ld+json"]').innerHTML

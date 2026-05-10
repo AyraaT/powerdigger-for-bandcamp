@@ -1,14 +1,14 @@
 // Buy Music Club + SoundCloud buttons injected on track / album pages.
 
-PD.bmcButtons = function () {
-        if (!PD.insertionPoint || !PD.data) return;
+PD.injectBmcButtons = function () {
+        if (!PD.nameSection || !PD.data) return;
 
         const type = PD.data['@type'];
         let trackURL = '', albumURL = '', artistURL = '', scbuttonurl = '';
         let queryCount = 0;
         let trackBool = false, albumBool = false, artistBool = false;
 
-        const ip = PD.insertionPoint;
+        const ip = PD.nameSection;
         ip.append(document.createElement('br'));
 
         const scbutton = document.createElement('button');
@@ -57,7 +57,7 @@ PD.bmcButtons = function () {
 
         // ── Validate and count down ──────────────────────────────────────────
         function qBMC(url, label) {
-                chrome.runtime.sendMessage({ type: 'validate', url }, (valid) => {
+                chrome.runtime.sendMessage({ type: 'bmcValidate', url }, (valid) => {
                         if (valid && label === 'track')  trackBool  = true;
                         if (valid && label === 'album')  albumBool  = true;
                         if (valid && label === 'artist') artistBool = true;
