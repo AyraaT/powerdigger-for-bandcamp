@@ -28,7 +28,7 @@ function trackPageRecolor() {
         const trackId = PD.data.additionalProperty[0].value.toString();
 
         // Set initial color from stored history.
-        PD.api.send(PD.MSG.TRACK_GET_COUNT, { trackid: trackId }, (count) => {
+        PD.api.trackGetCount(trackId, (count) => {
                 if (count) titleEl.style.backgroundColor = playColor(count);
         });
 
@@ -39,7 +39,7 @@ function trackPageRecolor() {
                                 (!mutation.oldValue || !mutation.oldValue.match(/\bplaying\b/)) &&
                                 mutation.target.classList && mutation.target.classList.contains('playing')
                         ) {
-                                PD.api.send(PD.MSG.TRACK_PLAY, { trackid: trackId }, (count) => {
+                                PD.api.trackPlay(trackId, (count) => {
                                         titleEl.style.backgroundColor = playColor(count);
                                 });
                         }
@@ -64,7 +64,7 @@ function albumPageRecolor() {
 
         // Set initial colors.
         trackIDs.forEach((id, i) => {
-                PD.api.send(PD.MSG.TRACK_GET_COUNT, { trackid: id }, (count) => {
+                PD.api.trackGetCount(id, (count) => {
                         if (count && table[i]) table[i].style.backgroundColor = playColor(count);
                 });
         });
@@ -78,7 +78,7 @@ function albumPageRecolor() {
                         ) {
                                 const rel = document.querySelector('tr.current_track').getAttribute('rel') || '';
                                 const idx = parseInt(rel.replace('tracknum=', ''), 10) - 1;
-                                PD.api.send(PD.MSG.TRACK_PLAY, { trackid: trackIDs[idx] }, (count) => {
+                                PD.api.trackPlay(trackIDs[idx], (count) => {
                                         if (table[idx]) table[idx].style.backgroundColor = playColor(count);
                                 });
                         }
@@ -100,7 +100,7 @@ function checkPlays(item) {
         if (!trackId) return;
 
         // Set initial color.
-        PD.api.send(PD.MSG.TRACK_GET_COUNT, { trackid: trackId }, (count) => {
+        PD.api.trackGetCount(trackId, (count) => {
                 if (count) item.style.backgroundColor = playColor(count);
         });
 
@@ -111,7 +111,7 @@ function checkPlays(item) {
                                 (!mutation.oldValue || !mutation.oldValue.match(/\bplaying\b/)) &&
                                 mutation.target.classList && mutation.target.classList.contains('playing')
                         ) {
-                                PD.api.send(PD.MSG.TRACK_PLAY, { trackid: trackId }, (count) => {
+                                PD.api.trackPlay(trackId, (count) => {
                                         item.style.backgroundColor = playColor(count);
                                 });
                         }

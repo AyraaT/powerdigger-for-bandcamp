@@ -17,6 +17,12 @@ const OPTION_DEFAULTS = {
         prefCommons: false,
 };
 
+function requestPermission(permission) {
+        return new Promise((resolve) => {
+                chrome.permissions.request({ permissions: [permission] }, resolve);
+        });
+}
+
 chrome.runtime.onMessage.addListener(function (message, sender, senderResponse) {
 
         // ── Options ──────────────────────────────────────────────────────────
@@ -30,7 +36,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, senderResponse) 
 
         // ── Backup / restore ─────────────────────────────────────────────────
         if (message.type === MSG.BACKUP_DOWNLOAD) {
-                chrome.permissions.request({ permissions: ['downloads'] }, (granted) => {
+                requestPermission('downloads').then((granted) => {
                         if (!granted) return;
                         // Export all tk: keys as a legacy-compatible {trackHistory:{}} blob.
                         local.getAll().then((allItems) => {
@@ -47,7 +53,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, senderResponse) 
 
         // ── 3rd-party extension check ────────────────────────────────────────
         if (message.type === MSG.PERM_CHECK_EXTENSIONS) {
-                chrome.permissions.request({ permissions: ['management'] }, (granted) => {
+                requestPermission('management').then((granted) => {
                         if (!granted) { local.set({ prefBpm: false }); senderResponse(false); return; }
                         const extensionBCE = 'padcfdpdlnpdojcihidkgjnmleeingep';
                         const extensionBCT = 'iniomjoihcjgakkfaebmcbnhmiobppel';
@@ -64,7 +70,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, senderResponse) 
 
         // ── Browser history permission ────────────────────────────────────────
         if (message.type === MSG.PERM_CHECK_HISTORY) {
-                chrome.permissions.request({ permissions: ['history'] }, (granted) => {
+                requestPermission('history').then((granted) => {
                         local.set({ prefHistory: granted });
                 });
         }

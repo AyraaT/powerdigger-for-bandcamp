@@ -5,8 +5,6 @@ PD.injectBmcButtons = function () {
 
         const type = PD.data['@type'];
         let trackURL = '', albumURL = '', artistURL = '', scbuttonurl = '';
-        let queryCount = 0;
-        let trackBool = false, albumBool = false, artistBool = false;
 
         const ip = PD.nameSection;
         ip.append(document.createElement('br'));
@@ -33,10 +31,13 @@ PD.injectBmcButtons = function () {
                 artistURL = 'https://www.buymusic.club/search/' + urlCreator(artistID);
                 scbutton.onclick = () => window.open(scbuttonurl, '_blank');
                 ip.append(scbutton);
-                queryCount = 3;
-                qBMC(trackURL,  'track');
-                qBMC(albumURL,  'album');
-                qBMC(artistURL, 'artist');
+
+                validateAll([
+                        { label: 'track', url: trackURL },
+                        { label: 'album', url: albumURL },
+                        { label: 'artist', url: artistURL },
+                ]).then(renderButtons);
+
         } else if (type === 'MusicAlbum') {
                 const albumID  = PD.data.name;
                 const artistID = PD.data.byArtist.name;
@@ -45,9 +46,11 @@ PD.injectBmcButtons = function () {
                 artistURL   = 'https://www.buymusic.club/search/' + urlCreator(artistID);
                 scbutton.onclick = () => window.open(scbuttonurl, '_blank');
                 ip.append(scbutton);
-                queryCount = 2;
-                qBMC(albumURL,  'album');
-                qBMC(artistURL, 'artist');
+
+                validateAll([
+                        { label: 'album', url: albumURL },
+                        { label: 'artist', url: artistURL },
+                ]).then(renderButtons);
         }
 
         // ── URL builder ─────────────────────────────────────────────────────
@@ -55,24 +58,30 @@ PD.injectBmcButtons = function () {
                 return query.split(/[^\w]/g).filter(Boolean).map(encodeURIComponent).join('+');
         }
 
-        // ── Validate and count down ──────────────────────────────────────────
-        function qBMC(url, label) {
-                PD.api.send(PD.MSG.BMC_VALIDATE, { url }, (valid) => {
-                        if (valid && label === 'track')  trackBool  = true;
-                        if (valid && label === 'album')  albumBool  = true;
-                        if (valid && label === 'artist') artistBool = true;
-                        queryCount--;
-                        if (queryCount === 0) renderButtons();
+        function validateOne(entry) {
+                return new Promise((resolve) => {
+                        PD.api.bmcValidate(entry.url, (valid) => resolve({ ...entry, valid: !!valid }));
                 });
         }
 
+        function validateAll(entries) {
+                return Promise.all(entries.map(validateOne));
+        }
+
         // ── Render result buttons ────────────────────────────────────────────
-        function renderButtons() {
+        function renderButtons(results) {
+                const status = {
+                        track: results.some((r) => r.label === 'track' && r.valid),
+                        album: results.some((r) => r.label === 'album' && r.valid),
+                        artist: results.some((r) => r.label === 'artist' && r.valid),
+                };
+
                 const entries = [
-                        { flag: trackBool,  label: 'TRACK',  url: trackURL  },
-                        { flag: albumBool,  label: 'ALBUM',  url: albumURL  },
-                        { flag: artistBool, label: 'ARTIST', url: artistURL },
+                        { flag: status.track,  label: 'TRACK',  url: trackURL  },
+                        { flag: status.album,  label: 'ALBUM',  url: albumURL  },
+                        { flag: status.artist, label: 'ARTIST', url: artistURL },
                 ];
+
                 entries.forEach(({ flag, label, url }) => {
                         if (!flag) return;
                         const btn = document.createElement('button');
